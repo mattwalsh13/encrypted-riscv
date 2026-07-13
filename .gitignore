@@ -7,3 +7,7 @@ riscv-llvm/**
 
 # Every file changed to add custom instructions
 !riscv-llvm/clang/include/clang/Basic/BuiltinsRISCV.td
+!riscv-llvm/llvm/include/llvm/IR/IntrinsicsRISCV.td
+!riscv-llvm/clang/lib/CodeGen/TargetBuiltins/RISCV.cpp
+!riscv-llvm/llvm/lib/Target/RISCV/RISCVInstrInfoFactorial.td
+!riscv-llvm/llvm/lib/Target/RISCV/RISCVInstrInfo.td
