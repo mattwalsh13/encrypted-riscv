@@ -281,3 +281,8 @@ include "clang/Basic/BuiltinsRISCVXAndes.td"
 // MIPS extensions.
 //===----------------------------------------------------------------------===//
 include "clang/Basic/BuiltinsRISCVXMIPS.td"
+
+//===----------------------------------------------------------------------===//
+// Custom functions.
+//===----------------------------------------------------------------------===//
+def factorial : RISCVBuiltin<"unsigned int(unsigned int)">;

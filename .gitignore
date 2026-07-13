@@ -2,7 +2,7 @@
 riscv/**
 riscv-llvm/**
 
-# Allows git to traverse subdirectories
+# Allows git to traverse subdirectories and find the changed files
 !riscv-llvm/**/
 
 # Every file changed to add custom instructions
