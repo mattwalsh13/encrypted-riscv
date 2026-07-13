@@ -1,6 +1,9 @@
 # Prevents 10k+ changes from being added (bad idea)
-riscv/
-riscv-llvm/
+riscv/**
+riscv-llvm/**
+
+# Allows git to traverse subdirectories
+!riscv-llvm/**/
 
 # Every file changed to add custom instructions
 !riscv-llvm/clang/include/clang/Basic/BuiltinsRISCV.td
