@@ -1,0 +1,26 @@
+
+main.o:	file format elf32-littleriscv
+
+Disassembly of section .text:
+
+00000000 <main>:
+       0: 1101         	addi	sp, sp, -0x20
+       2: ce06         	sw	ra, 0x1c(sp)
+       4: cc22         	sw	s0, 0x18(sp)
+       6: 1000         	addi	s0, sp, 0x20
+       8: 4501         	li	a0, 0x0
+       a: ca2a         	sw	a0, 0x14(sp)
+       c: 4585         	li	a1, 0x1
+       e: c82e         	sw	a1, 0x10(sp)
+      10: 4589         	li	a1, 0x2
+      12: c62e         	sw	a1, 0xc(sp)
+      14: 45c2         	lw	a1, 0x10(sp)
+      16: 4632         	lw	a2, 0xc(sp)
+      18: 00c585db     	enc_add	a1, a1, a2
+      1c: c22e         	sw	a1, 0x4(sp)
+      1e: 4592         	lw	a1, 0x4(sp)
+      20: c42e         	sw	a1, 0x8(sp)
+      22: 40f2         	lw	ra, 0x1c(sp)
+      24: 4462         	lw	s0, 0x18(sp)
+      26: 6105         	addi	sp, sp, 0x20
+      28: 8082         	ret

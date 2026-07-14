@@ -1,0 +1,45 @@
+=== BINARY MACHINE CODE ===
+Offset 0x0  :                 0001000100000001
+Offset 0x2  :                 1100111000000110
+Offset 0x4  :                 1100110000100010
+Offset 0x6  :                 0001000000000000
+Offset 0x8  :                 0100010100000001
+Offset 0xa  : 01000101100001011100101000101010
+Offset 0xe  :                 1100100000101110
+Offset 0x10 :                 0100010110001001
+Offset 0x12 :                 1100011000101110
+Offset 0x14 :                 0100010111000010
+Offset 0x16 :                 0100011000110010
+Offset 0x18 :                 1000010111011011
+Offset 0x1a :                 0000000011000101
+Offset 0x1c :                 1100001000101110
+Offset 0x1e :                 0100010110010010
+Offset 0x20 :                 1100010000101110
+Offset 0x22 :                 0100000011110010
+Offset 0x24 :                 0100010001100010
+Offset 0x26 :                 0110000100000101
+Offset 0x28 :                 1000000010000010
+
+=============================================
+
+=== HEXADECIMAL MACHINE CODE ===
+Offset 0x0  :     1101
+Offset 0x2  :     ce06
+Offset 0x4  :     cc22
+Offset 0x6  :     1000
+Offset 0x8  :     4501
+Offset 0xa  : 4585ca2a
+Offset 0xe  :     c82e
+Offset 0x10 :     4589
+Offset 0x12 :     c62e
+Offset 0x14 :     45c2
+Offset 0x16 :     4632
+Offset 0x18 :     85db
+Offset 0x1a :     00c5
+Offset 0x1c :     c22e
+Offset 0x1e :     4592
+Offset 0x20 :     c42e
+Offset 0x22 :     40f2
+Offset 0x24 :     4462
+Offset 0x26 :     6105
+Offset 0x28 :     8082

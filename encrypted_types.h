@@ -10,5 +10,5 @@ typedef unsigned int enc_int __attribute__((ext_vector_type(1)));
         "Error: Second argument to custom_op must be a enc_int!"); \
     \
     /* If checks pass, seamlessly execute the actual underlying hardware built-in */ \
-    __builtin_riscv_enc_add(arg1, arg2); \
+    __builtin_riscv_enc_add((arg1)[0], (arg2)[0]); \
 })
