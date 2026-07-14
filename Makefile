@@ -15,4 +15,4 @@ clean:
 	rm readable_riscv.txt
 
 clang:
-	cd ./riscv-llvm/build && ninja -j2 clang lld
+	cd ./riscv-llvm/build && ninja -j4 clang lld

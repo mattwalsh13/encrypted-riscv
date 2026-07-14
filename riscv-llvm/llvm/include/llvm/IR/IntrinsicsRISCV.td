@@ -2135,9 +2135,12 @@ include "llvm/IR/IntrinsicsRISCVXMIPS.td"
 //===----------------------------------------------------------------------===//
 let TargetPrefix = "riscv" in {
 
-  class RiscvEncAdd
+  class RiscvRTypeEnc
       : Intrinsic<[llvm_i32_ty], [llvm_i32_ty, llvm_i32_ty],
               [IntrNoMem, IntrWillReturn, IntrSpeculatable]>;
-  
-  def int_riscv_enc_add : RiscvEncAdd;
+
+  foreach op = ["add", "sub", "sll", "slt", "sltu", "xor", "srl", "sra", "or", "and"] in {
+    // Use pure string concatenation to name the definition
+    def "int_riscv_" # op # "_enc" : RiscvRTypeEnc;
+  }
 }

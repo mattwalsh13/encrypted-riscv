@@ -1,11 +1,20 @@
 #include "encrypted_types.h"
 
 int main() {
-	enc_int x = { 0x1 };
-    enc_int y = { 0x2 };
-    enc_int result;
+	int_enc x = { 0xD };
+    int_enc y = { 0x7 };
+    int_enc result;
 
-    result = enc_add(x, y);
+    result = add_enc(x, y);
+    result = sub_enc(x, y);
+    result = sll_enc(x, y);
+    result = slt_enc(x, y);
+    result = sltu_enc(x, y);
+    result = xor_enc(x, y);
+    result = srl_enc(x, y);
+    result = sra_enc(x, y);
+    result = or_enc(x, y);
+    result = and_enc(x, y);
 
     return 0;
 }

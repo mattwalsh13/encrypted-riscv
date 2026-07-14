@@ -1615,9 +1615,24 @@ Value *CodeGenFunction::EmitRISCVBuiltinExpr(unsigned BuiltinID,
     return Builder.CreateFPTrunc(Ops[0], BFloatTy);
 
   // Encrypted
-  case RISCV::BI__builtin_riscv_enc_add:
-    ID = Intrinsic::riscv_enc_add;
-    break;
+  #define MAP_ENC_BUILTIN(op) \
+    case RISCV::BI__builtin_riscv_##op: \
+      ID = Intrinsic::riscv_##op; \
+      break;
+
+MAP_ENC_BUILTIN(add_enc)
+MAP_ENC_BUILTIN(sub_enc)
+MAP_ENC_BUILTIN(sll_enc)
+MAP_ENC_BUILTIN(slt_enc)
+MAP_ENC_BUILTIN(sltu_enc)
+MAP_ENC_BUILTIN(xor_enc)
+MAP_ENC_BUILTIN(srl_enc)
+MAP_ENC_BUILTIN(sra_enc)
+MAP_ENC_BUILTIN(or_enc)
+MAP_ENC_BUILTIN(and_enc)
+
+#undef MAP_ENC_BUILTIN
+
 
     // Vector builtins are handled from here.
 #include "clang/Basic/riscv_vector_builtin_cg.inc"
