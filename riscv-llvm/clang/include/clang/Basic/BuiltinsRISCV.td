@@ -283,6 +283,6 @@ include "clang/Basic/BuiltinsRISCVXAndes.td"
 include "clang/Basic/BuiltinsRISCVXMIPS.td"
 
 //===----------------------------------------------------------------------===//
-// Custom functions.
+// Encrypted extensions.
 //===----------------------------------------------------------------------===//
-def factorial : RISCVBuiltin<"unsigned int(unsigned int)">;
+def enc_add : RISCVBuiltin<"unsigned int(unsigned int, unsigned int)">;

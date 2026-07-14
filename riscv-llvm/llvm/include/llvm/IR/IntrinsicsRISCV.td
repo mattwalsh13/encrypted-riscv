@@ -2131,12 +2131,13 @@ include "llvm/IR/IntrinsicsRISCVXCV.td"
 include "llvm/IR/IntrinsicsRISCVXAndes.td"
 include "llvm/IR/IntrinsicsRISCVXMIPS.td"
 
-// CUSTOM FUNCTIONS
+// Encrypted extensions
+//===----------------------------------------------------------------------===//
 let TargetPrefix = "riscv" in {
 
-  class RiscvFactorial
-      : Intrinsic<[llvm_i32_ty], [llvm_i32_ty],
+  class RiscvEncAdd
+      : Intrinsic<[llvm_i32_ty], [llvm_i32_ty, llvm_i32_ty],
               [IntrNoMem, IntrWillReturn, IntrSpeculatable]>;
   
-  def int_riscv_factorial : RiscvFactorial;
+  def int_riscv_enc_add : RiscvEncAdd;
 }

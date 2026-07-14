@@ -2441,7 +2441,7 @@ include "RISCVInstrInfoXAIF.td"
 include "RISCVInstrGISel.td"
 
 //===----------------------------------------------------------------------===//
-// Custom Functions
+// Encrypted
 //===----------------------------------------------------------------------===//
 
-include "RISCVInstrInfoFactorial.td"
+include "RISCVInstrInfoEncrypted.td"

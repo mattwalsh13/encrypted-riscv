@@ -1,0 +1,24 @@
+// === ENCRYPTED ADD +++
+def ENC_ADD : Instruction {
+    bits<32> Inst;
+    bits<32> SoftFail = 0;
+    bits<5> rs2;
+    bits<5> rs1;
+    bits<5> rd;
+    let Namespace = "RISCV";
+    let Size = 4;
+    let hasSideEffects = 0;
+    let mayLoad = 0;
+    let mayStore = 0;
+    let Inst{31-25} = 0b0000000; /*funct7*/  
+    let Inst{24-20} = rs2;
+    let Inst{19-15} = rs1;
+    let Inst{14-12} = 0b000; /*funct3*/
+    let Inst{11-7} = rd;
+    let Inst{6-0} = 0b1011011; /*opcode*/
+    dag OutOperandList = (outs GPR:$rd);
+    dag InOperandList = (ins GPR:$rs1, GPR:$rs2);
+    let AsmString = "enc_add\t$rd, $rs1, $rs2";
+}
+
+def : Pat<(int_riscv_enc_add GPR:$rs1, GPR:$rs2), (ENC_ADD GPR:$rs1, GPR:$rs2)>;

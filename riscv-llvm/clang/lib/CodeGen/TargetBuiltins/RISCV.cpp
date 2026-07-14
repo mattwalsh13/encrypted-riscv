@@ -1614,9 +1614,9 @@ Value *CodeGenFunction::EmitRISCVBuiltinExpr(unsigned BuiltinID,
   case RISCV::BI__builtin_riscv_nds_fcvt_bf16_s:
     return Builder.CreateFPTrunc(Ops[0], BFloatTy);
 
-  // CUSTOM FUNCTIONS
-  case RISCV::BI__builtin_riscv_factorial:
-    ID = Intrinsic::riscv_factorial;
+  // Encrypted
+  case RISCV::BI__builtin_riscv_enc_add:
+    ID = Intrinsic::riscv_enc_add;
     break;
 
     // Vector builtins are handled from here.

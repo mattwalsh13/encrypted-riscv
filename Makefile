@@ -13,3 +13,6 @@ clean:
 	rm raw_code.bin
 	rm readable_machine_code.txt
 	rm readable_riscv.txt
+
+clang:
+	cd ./riscv-llvm/build && ninja -j2 clang lld
