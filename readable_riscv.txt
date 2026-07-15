@@ -4,124 +4,26 @@ main.o:	file format elf32-littleriscv
 Disassembly of section .text:
 
 00000000 <main>:
-       0: 7159         	addi	sp, sp, -0x70
-       2: d686         	sw	ra, 0x6c(sp)
-       4: d4a2         	sw	s0, 0x68(sp)
-       6: 1880         	addi	s0, sp, 0x70
-       8: 4501         	li	a0, 0x0
-       a: d2aa         	sw	a0, 0x64(sp)
-       c: 45b5         	li	a1, 0xd
-       e: d0ae         	sw	a1, 0x60(sp)
-      10: 459d         	li	a1, 0x7
-      12: ceae         	sw	a1, 0x5c(sp)
-      14: 5586         	lw	a1, 0x60(sp)
-      16: 4676         	lw	a2, 0x5c(sp)
-      18: 00c585db     	add_enc	a1, a1, a2
-      1c: caae         	sw	a1, 0x54(sp)
-      1e: 45d6         	lw	a1, 0x54(sp)
-      20: ccae         	sw	a1, 0x58(sp)
-      22: 5586         	lw	a1, 0x60(sp)
-      24: 4676         	lw	a2, 0x5c(sp)
-      26: 40c585db     	sub_enc	a1, a1, a2
-      2a: c8ae         	sw	a1, 0x50(sp)
-      2c: 45c6         	lw	a1, 0x50(sp)
-      2e: ccae         	sw	a1, 0x58(sp)
-      30: 5586         	lw	a1, 0x60(sp)
-      32: 4676         	lw	a2, 0x5c(sp)
-      34: 00c595db     	sll_enc	a1, a1, a2
-      38: c6ae         	sw	a1, 0x4c(sp)
-      3a: 45b6         	lw	a1, 0x4c(sp)
-      3c: ccae         	sw	a1, 0x58(sp)
-      3e: 5586         	lw	a1, 0x60(sp)
-      40: 4676         	lw	a2, 0x5c(sp)
-      42: 00c5a5db     	slt_enc	a1, a1, a2
-      46: c4ae         	sw	a1, 0x48(sp)
-      48: 45a6         	lw	a1, 0x48(sp)
-      4a: ccae         	sw	a1, 0x58(sp)
-      4c: 5586         	lw	a1, 0x60(sp)
-      4e: 4676         	lw	a2, 0x5c(sp)
-      50: 00c5b5db     	sltu_enc	a1, a1, a2
-      54: c2ae         	sw	a1, 0x44(sp)
-      56: 4596         	lw	a1, 0x44(sp)
-      58: ccae         	sw	a1, 0x58(sp)
-      5a: 5586         	lw	a1, 0x60(sp)
-      5c: 4676         	lw	a2, 0x5c(sp)
-      5e: 00c5c5db     	xor_enc	a1, a1, a2
-      62: c0ae         	sw	a1, 0x40(sp)
-      64: 4586         	lw	a1, 0x40(sp)
-      66: ccae         	sw	a1, 0x58(sp)
-      68: 5586         	lw	a1, 0x60(sp)
-      6a: 4676         	lw	a2, 0x5c(sp)
-      6c: 00c5d5db     	srl_enc	a1, a1, a2
-      70: de2e         	sw	a1, 0x3c(sp)
-      72: 55f2         	lw	a1, 0x3c(sp)
-      74: ccae         	sw	a1, 0x58(sp)
-      76: 5586         	lw	a1, 0x60(sp)
-      78: 4676         	lw	a2, 0x5c(sp)
-      7a: 40c5d5db     	sra_enc	a1, a1, a2
-      7e: dc2e         	sw	a1, 0x38(sp)
-      80: 55e2         	lw	a1, 0x38(sp)
-      82: ccae         	sw	a1, 0x58(sp)
-      84: 5586         	lw	a1, 0x60(sp)
-      86: 4676         	lw	a2, 0x5c(sp)
-      88: 00c5e5db     	or_enc	a1, a1, a2
-      8c: da2e         	sw	a1, 0x34(sp)
-      8e: 55d2         	lw	a1, 0x34(sp)
-      90: ccae         	sw	a1, 0x58(sp)
-      92: 5586         	lw	a1, 0x60(sp)
-      94: 4676         	lw	a2, 0x5c(sp)
-      96: 00c5f5db     	and_enc	a1, a1, a2
-      9a: d82e         	sw	a1, 0x30(sp)
-      9c: 55c2         	lw	a1, 0x30(sp)
-      9e: ccae         	sw	a1, 0x58(sp)
-      a0: 5586         	lw	a1, 0x60(sp)
-      a2: 00d5858b     	addi_enc	a1, a1, 0xd
-      a6: d62e         	sw	a1, 0x2c(sp)
-      a8: 55b2         	lw	a1, 0x2c(sp)
-      aa: ccae         	sw	a1, 0x58(sp)
-      ac: 5586         	lw	a1, 0x60(sp)
-      ae: 00d5a58b     	slti_enc	a1, a1, 0xd
-      b2: d42e         	sw	a1, 0x28(sp)
-      b4: 55a2         	lw	a1, 0x28(sp)
-      b6: ccae         	sw	a1, 0x58(sp)
-      b8: 5586         	lw	a1, 0x60(sp)
-      ba: 00d5b58b     	sltiu_enc	a1, a1, 0xd
-      be: d22e         	sw	a1, 0x24(sp)
-      c0: 5592         	lw	a1, 0x24(sp)
-      c2: ccae         	sw	a1, 0x58(sp)
-      c4: 5586         	lw	a1, 0x60(sp)
-      c6: 00d5c58b     	xori_enc	a1, a1, 0xd
-      ca: d02e         	sw	a1, 0x20(sp)
-      cc: 5582         	lw	a1, 0x20(sp)
-      ce: ccae         	sw	a1, 0x58(sp)
-      d0: 5586         	lw	a1, 0x60(sp)
-      d2: 00d5f58b     	andi_enc	a1, a1, 0xd
-      d6: ce2e         	sw	a1, 0x1c(sp)
-      d8: 45f2         	lw	a1, 0x1c(sp)
-      da: ccae         	sw	a1, 0x58(sp)
-      dc: 5586         	lw	a1, 0x60(sp)
-      de: 00d5958b     	slli_enc	a1, a1, 0xd
-      e2: cc2e         	sw	a1, 0x18(sp)
-      e4: 45e2         	lw	a1, 0x18(sp)
-      e6: ccae         	sw	a1, 0x58(sp)
-      e8: 5586         	lw	a1, 0x60(sp)
-      ea: 00d5d58b     	srli_enc	a1, a1, 0xd
-      ee: ca2e         	sw	a1, 0x14(sp)
-      f0: 45d2         	lw	a1, 0x14(sp)
-      f2: ccae         	sw	a1, 0x58(sp)
-      f4: 5586         	lw	a1, 0x60(sp)
-      f6: 40d5d58b     	srai_enc	a1, a1, 0xd
-      fa: c82e         	sw	a1, 0x10(sp)
-      fc: 45c2         	lw	a1, 0x10(sp)
-      fe: ccae         	sw	a1, 0x58(sp)
-     100: 5586         	lw	a1, 0x60(sp)
-     102: 4676         	lw	a2, 0x5c(sp)
-     104: 46e6         	lw	a3, 0x58(sp)
-     106: 6ec5d5ab     	cmov_enc	a1, a3, a2, a1
-     10a: c62e         	sw	a1, 0xc(sp)
-     10c: 45b2         	lw	a1, 0xc(sp)
-     10e: ccae         	sw	a1, 0x58(sp)
-     110: 50b6         	lw	ra, 0x6c(sp)
-     112: 5426         	lw	s0, 0x68(sp)
-     114: 6165         	addi	sp, sp, 0x70
-     116: 8082         	ret
+       0: 451d         	li	a0, 0x7
+       2: 45b5         	li	a1, 0xd
+       4: 00a5865b     	add_enc	a2, a1, a0
+       8: 40a5865b     	sub_enc	a2, a1, a0
+       c: 00a5965b     	sll_enc	a2, a1, a0
+      10: 00a5a65b     	slt_enc	a2, a1, a0
+      14: 00a5b65b     	sltu_enc	a2, a1, a0
+      18: 00a5c65b     	xor_enc	a2, a1, a0
+      1c: 00a5d65b     	srl_enc	a2, a1, a0
+      20: 40a5d65b     	sra_enc	a2, a1, a0
+      24: 00a5e65b     	or_enc	a2, a1, a0
+      28: 00a5f65b     	and_enc	a2, a1, a0
+      2c: 00d5860b     	addi_enc	a2, a1, 0xd
+      30: 00d5a60b     	slti_enc	a2, a1, 0xd
+      34: 00d5b60b     	sltiu_enc	a2, a1, 0xd
+      38: 00d5c60b     	xori_enc	a2, a1, 0xd
+      3c: 00d5f60b     	andi_enc	a2, a1, 0xd
+      40: 00d5960b     	slli_enc	a2, a1, 0xd
+      44: 00d5d60b     	srli_enc	a2, a1, 0xd
+      48: 40d5d60b     	srai_enc	a2, a1, 0xd
+      4c: 66a5d52b     	cmov_enc	a0, a2, a0, a1
+      50: 4501         	li	a0, 0x0
+      52: 8082         	ret
