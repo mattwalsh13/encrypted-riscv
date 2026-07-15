@@ -62,23 +62,28 @@ foreach op = [
   def op.name # "_ENC" : Instruction {
     bits<32> Inst;
     bits<32> SoftFail = 0;
-    bits<12> imm; bits<5> rs1; bits<5> rd;
-    let Namespace = "RISCV"; let Size = 4;
-    let hasSideEffects = 0; let mayLoad = 0; let mayStore = 0;
+    bits<12> imm12; 
+    bits<5> rs1; 
+    bits<5> rd;
+    let Namespace = "RISCV"; 
+    let Size = 4;
+    let hasSideEffects = 0; 
+    let mayLoad = 0; 
+    let mayStore = 0;
 
-    let Inst{31-20} = imm;
+    let Inst{31-20} = imm12;
     let Inst{19-15} = rs1;
     let Inst{14-12} = op.funct3;
     let Inst{11-7}  = rd;
     let Inst{6-0}   = 0b0001011;
 
     dag OutOperandList = (outs GPR:$rd);
-    dag InOperandList  = (ins GPR:$rs1, simm12:$imm);
-    let AsmString = !tolower(op.name) # "_enc\t$rd, $rs1, $imm";
+    dag InOperandList  = (ins GPR:$rs1, simm12:$imm12);
+    let AsmString = !tolower(op.name) # "_enc\t$rd, $rs1, $imm12";
   }
 
-  def : Pat<(!cast<Intrinsic>("int_riscv_" # !tolower(op.name) # "_enc") GPR:$rs1, imm:$imm), 
-            (!cast<Instruction>(op.name # "_ENC") GPR:$rs1, i32imm:$imm)>;
+  def : Pat<(!cast<Intrinsic>("int_riscv_" # !tolower(op.name) # "_enc") GPR:$rs1, timm:$imm12), 
+            (!cast<Instruction>(op.name # "_ENC") GPR:$rs1, timm:$imm12)>;
 }
 
 // Shifting
@@ -90,24 +95,29 @@ foreach op = [
   def op.name # "_ENC" : Instruction {
     bits<32> Inst;
     bits<32> SoftFail = 0;
-    bits<5> shamt; bits<5> rs1; bits<5> rd;
-    let Namespace = "RISCV"; let Size = 4;
-    let hasSideEffects = 0; let mayLoad = 0; let mayStore = 0;
+    bits<5> imm5; 
+    bits<5> rs1;
+    bits<5> rd;
+    let Namespace = "RISCV"; 
+    let Size = 4;
+    let hasSideEffects = 0; 
+    let mayLoad = 0; 
+    let mayStore = 0;
 
     let Inst{31-25} = op.funct7;
-    let Inst{24-20} = shamt;
+    let Inst{24-20} = imm5;
     let Inst{19-15} = rs1;
     let Inst{14-12} = op.funct3;
     let Inst{11-7}  = rd;
     let Inst{6-0}   = 0b0001011;
 
     dag OutOperandList = (outs GPR:$rd);
-    dag InOperandList  = (ins GPR:$rs1, uimm5:$shamt);
-    let AsmString = !tolower(op.name) # "_enc\t$rd, $rs1, $shamt";
+    dag InOperandList  = (ins GPR:$rs1, uimm5:$imm5);
+    let AsmString = !tolower(op.name) # "_enc\t$rd, $rs1, $imm5";
   }
 
-  def : Pat<(!cast<Intrinsic>("int_riscv_" # !tolower(op.name) # "_enc") GPR:$rs1, imm:$shamt), 
-            (!cast<Instruction>(op.name # "_ENC") GPR:$rs1, i32imm:$shamt)>;
+  def : Pat<(!cast<Intrinsic>("int_riscv_" # !tolower(op.name) # "_enc") GPR:$rs1, timm:$imm5), 
+            (!cast<Instruction>(op.name # "_ENC") GPR:$rs1, timm:$imm5)>;
 }
 
 // === ENCRYPTED CMOV ===

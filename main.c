@@ -26,5 +26,7 @@ int main() {
     result = srli_enc(x, 13);
     result = srai_enc(x, 13);
 
+    result = cmov_enc(x, y, result);
+
     return 0;
 }

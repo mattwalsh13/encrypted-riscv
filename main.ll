@@ -20,6 +20,15 @@ entry:
   %tmp32 = alloca i32, align 4
   %tmp37 = alloca i32, align 4
   %tmp42 = alloca i32, align 4
+  %tmp47 = alloca i32, align 4
+  %tmp51 = alloca i32, align 4
+  %tmp55 = alloca i32, align 4
+  %tmp59 = alloca i32, align 4
+  %tmp63 = alloca i32, align 4
+  %tmp67 = alloca i32, align 4
+  %tmp71 = alloca i32, align 4
+  %tmp75 = alloca i32, align 4
+  %tmp79 = alloca i32, align 4
   store i32 0, ptr %retval, align 4
   store <1 x i32> splat (i32 13), ptr %x, align 4
   store <1 x i32> splat (i32 7), ptr %y, align 4
@@ -123,6 +132,82 @@ entry:
   %splat.splatinsert45 = insertelement <1 x i32> poison, i32 %39, i64 0
   %splat.splat46 = shufflevector <1 x i32> %splat.splatinsert45, <1 x i32> poison, <1 x i32> zeroinitializer
   store <1 x i32> %splat.splat46, ptr %result, align 4
+  %40 = load <1 x i32>, ptr %x, align 4
+  %vecext48 = extractelement <1 x i32> %40, i32 0
+  %41 = call i32 @llvm.riscv.addi.enc(i32 %vecext48, i32 13)
+  store i32 %41, ptr %tmp47, align 4
+  %42 = load i32, ptr %tmp47, align 4
+  %splat.splatinsert49 = insertelement <1 x i32> poison, i32 %42, i64 0
+  %splat.splat50 = shufflevector <1 x i32> %splat.splatinsert49, <1 x i32> poison, <1 x i32> zeroinitializer
+  store <1 x i32> %splat.splat50, ptr %result, align 4
+  %43 = load <1 x i32>, ptr %x, align 4
+  %vecext52 = extractelement <1 x i32> %43, i32 0
+  %44 = call i32 @llvm.riscv.slti.enc(i32 %vecext52, i32 13)
+  store i32 %44, ptr %tmp51, align 4
+  %45 = load i32, ptr %tmp51, align 4
+  %splat.splatinsert53 = insertelement <1 x i32> poison, i32 %45, i64 0
+  %splat.splat54 = shufflevector <1 x i32> %splat.splatinsert53, <1 x i32> poison, <1 x i32> zeroinitializer
+  store <1 x i32> %splat.splat54, ptr %result, align 4
+  %46 = load <1 x i32>, ptr %x, align 4
+  %vecext56 = extractelement <1 x i32> %46, i32 0
+  %47 = call i32 @llvm.riscv.sltiu.enc(i32 %vecext56, i32 13)
+  store i32 %47, ptr %tmp55, align 4
+  %48 = load i32, ptr %tmp55, align 4
+  %splat.splatinsert57 = insertelement <1 x i32> poison, i32 %48, i64 0
+  %splat.splat58 = shufflevector <1 x i32> %splat.splatinsert57, <1 x i32> poison, <1 x i32> zeroinitializer
+  store <1 x i32> %splat.splat58, ptr %result, align 4
+  %49 = load <1 x i32>, ptr %x, align 4
+  %vecext60 = extractelement <1 x i32> %49, i32 0
+  %50 = call i32 @llvm.riscv.xori.enc(i32 %vecext60, i32 13)
+  store i32 %50, ptr %tmp59, align 4
+  %51 = load i32, ptr %tmp59, align 4
+  %splat.splatinsert61 = insertelement <1 x i32> poison, i32 %51, i64 0
+  %splat.splat62 = shufflevector <1 x i32> %splat.splatinsert61, <1 x i32> poison, <1 x i32> zeroinitializer
+  store <1 x i32> %splat.splat62, ptr %result, align 4
+  %52 = load <1 x i32>, ptr %x, align 4
+  %vecext64 = extractelement <1 x i32> %52, i32 0
+  %53 = call i32 @llvm.riscv.andi.enc(i32 %vecext64, i32 13)
+  store i32 %53, ptr %tmp63, align 4
+  %54 = load i32, ptr %tmp63, align 4
+  %splat.splatinsert65 = insertelement <1 x i32> poison, i32 %54, i64 0
+  %splat.splat66 = shufflevector <1 x i32> %splat.splatinsert65, <1 x i32> poison, <1 x i32> zeroinitializer
+  store <1 x i32> %splat.splat66, ptr %result, align 4
+  %55 = load <1 x i32>, ptr %x, align 4
+  %vecext68 = extractelement <1 x i32> %55, i32 0
+  %56 = call i32 @llvm.riscv.slli.enc(i32 %vecext68, i32 13)
+  store i32 %56, ptr %tmp67, align 4
+  %57 = load i32, ptr %tmp67, align 4
+  %splat.splatinsert69 = insertelement <1 x i32> poison, i32 %57, i64 0
+  %splat.splat70 = shufflevector <1 x i32> %splat.splatinsert69, <1 x i32> poison, <1 x i32> zeroinitializer
+  store <1 x i32> %splat.splat70, ptr %result, align 4
+  %58 = load <1 x i32>, ptr %x, align 4
+  %vecext72 = extractelement <1 x i32> %58, i32 0
+  %59 = call i32 @llvm.riscv.srli.enc(i32 %vecext72, i32 13)
+  store i32 %59, ptr %tmp71, align 4
+  %60 = load i32, ptr %tmp71, align 4
+  %splat.splatinsert73 = insertelement <1 x i32> poison, i32 %60, i64 0
+  %splat.splat74 = shufflevector <1 x i32> %splat.splatinsert73, <1 x i32> poison, <1 x i32> zeroinitializer
+  store <1 x i32> %splat.splat74, ptr %result, align 4
+  %61 = load <1 x i32>, ptr %x, align 4
+  %vecext76 = extractelement <1 x i32> %61, i32 0
+  %62 = call i32 @llvm.riscv.srai.enc(i32 %vecext76, i32 13)
+  store i32 %62, ptr %tmp75, align 4
+  %63 = load i32, ptr %tmp75, align 4
+  %splat.splatinsert77 = insertelement <1 x i32> poison, i32 %63, i64 0
+  %splat.splat78 = shufflevector <1 x i32> %splat.splatinsert77, <1 x i32> poison, <1 x i32> zeroinitializer
+  store <1 x i32> %splat.splat78, ptr %result, align 4
+  %64 = load <1 x i32>, ptr %x, align 4
+  %vecext80 = extractelement <1 x i32> %64, i32 0
+  %65 = load <1 x i32>, ptr %y, align 4
+  %vecext81 = extractelement <1 x i32> %65, i32 0
+  %66 = load <1 x i32>, ptr %result, align 4
+  %vecext82 = extractelement <1 x i32> %66, i32 0
+  %67 = call i32 @llvm.riscv.cmov.enc(i32 %vecext80, i32 %vecext81, i32 %vecext82)
+  store i32 %67, ptr %tmp79, align 4
+  %68 = load i32, ptr %tmp79, align 4
+  %splat.splatinsert83 = insertelement <1 x i32> poison, i32 %68, i64 0
+  %splat.splat84 = shufflevector <1 x i32> %splat.splatinsert83, <1 x i32> poison, <1 x i32> zeroinitializer
+  store <1 x i32> %splat.splat84, ptr %result, align 4
   ret i32 0
 }
 
@@ -156,6 +241,33 @@ declare i32 @llvm.riscv.or.enc(i32, i32) #1
 ; Function Attrs: nounwind speculatable willreturn memory(none)
 declare i32 @llvm.riscv.and.enc(i32, i32) #1
 
+; Function Attrs: nounwind speculatable willreturn memory(none)
+declare i32 @llvm.riscv.addi.enc(i32, i32 immarg) #1
+
+; Function Attrs: nounwind speculatable willreturn memory(none)
+declare i32 @llvm.riscv.slti.enc(i32, i32 immarg) #1
+
+; Function Attrs: nounwind speculatable willreturn memory(none)
+declare i32 @llvm.riscv.sltiu.enc(i32, i32 immarg) #1
+
+; Function Attrs: nounwind speculatable willreturn memory(none)
+declare i32 @llvm.riscv.xori.enc(i32, i32 immarg) #1
+
+; Function Attrs: nounwind speculatable willreturn memory(none)
+declare i32 @llvm.riscv.andi.enc(i32, i32 immarg) #1
+
+; Function Attrs: nounwind speculatable willreturn memory(none)
+declare i32 @llvm.riscv.slli.enc(i32, i32 immarg) #1
+
+; Function Attrs: nounwind speculatable willreturn memory(none)
+declare i32 @llvm.riscv.srli.enc(i32, i32 immarg) #1
+
+; Function Attrs: nounwind speculatable willreturn memory(none)
+declare i32 @llvm.riscv.srai.enc(i32, i32 immarg) #1
+
+; Function Attrs: nounwind speculatable willreturn memory(none)
+declare i32 @llvm.riscv.cmov.enc(i32, i32, i32) #1
+
 attributes #0 = { noinline nounwind optnone "frame-pointer"="all" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="generic-rv32" "target-features"="+32bit,+a,+c,+i,+m,+relax,+zaamo,+zalrsc,+zca,+zmmul,-b,-d,-e,-experimental-p,-experimental-smpmpmt,-experimental-svukte,-experimental-xqccmt,-experimental-xsfmclic,-experimental-xsfsclic,-experimental-y,-experimental-zibi,-experimental-zicfilp,-experimental-zicfiss,-experimental-zvabd,-experimental-zvbc32e,-experimental-zvdot4a8i,-experimental-zvfbdota32f,-experimental-zvfbfa,-experimental-zvfofp8min,-experimental-zvfqwbdota8f,-experimental-zvfqwdota8f,-experimental-zvfwbdota16bf,-experimental-zvfwdota16bf,-experimental-zvkgs,-experimental-zvqwbdota16i,-experimental-zvqwbdota8i,-experimental-zvqwdota16i,-experimental-zvqwdota8i,-experimental-zvvfmm,-experimental-zvvmm,-experimental-zvvmtls,-experimental-zvvmttls,-experimental-zvzip,-f,-h,-q,-sdext,-sdtrig,-sha,-shcounterenw,-shgatpa,-shlcofideleg,-shtvala,-shvsatpa,-shvstvala,-shvstvecd,-smaia,-smcdeleg,-smcntrpmf,-smcsrind,-smctr,-smdbltrp,-smepmp,-smmpm,-smnpm,-smrnmi,-smstateen,-ssaia,-ssccfg,-ssccptr,-sscofpmf,-sscounterenw,-sscsrind,-ssctr,-ssdbltrp,-ssnpm,-sspm,-ssqosid,-ssstateen,-ssstrict,-sstc,-sstvala,-sstvecd,-ssu64xl,-supm,-svade,-svadu,-svbare,-svinval,-svnapot,-svpbmt,-svrsw60t59b,-svvptc,-v,-xaifet,-xandesbfhcvt,-xandesperf,-xandesvbfhcvt,-xandesvdot,-xandesvpackfph,-xandesvsinth,-xandesvsintload,-xcheriot,-xcvalu,-xcvbi,-xcvbitmanip,-xcvelw,-xcvmac,-xcvmem,-xcvsimd,-xmipscbop,-xmipscmov,-xmipsexectl,-xmipslsp,-xqccmp,-xqci,-xqcia,-xqciac,-xqcibi,-xqcibm,-xqcicli,-xqcicm,-xqcics,-xqcicsr,-xqciint,-xqciio,-xqcilb,-xqcili,-xqcilia,-xqcilo,-xqcilsm,-xqcisim,-xqcisls,-xqcisync,-xsfcease,-xsfmm128t,-xsfmm16t,-xsfmm32a,-xsfmm32a16f,-xsfmm32a32f,-xsfmm32a8f,-xsfmm32a8i,-xsfmm32t,-xsfmm64a64f,-xsfmm64t,-xsfmmbase,-xsfvcp,-xsfvfbfexp16e,-xsfvfexp16e,-xsfvfexp32e,-xsfvfexpa,-xsfvfexpa64e,-xsfvfnrclipxfqf,-xsfvfwmaccqqq,-xsfvqmaccdod,-xsfvqmaccqoq,-xsifivecdiscarddlone,-xsifivecflushdlone,-xsmtvdot,-xsmtvdotii,-xtheadba,-xtheadbb,-xtheadbs,-xtheadcmo,-xtheadcondmov,-xtheadfmemidx,-xtheadmac,-xtheadmemidx,-xtheadmempair,-xtheadsync,-xtheadvdot,-xventanacondops,-xwchc,-za128rs,-za64rs,-zabha,-zacas,-zalasr,-zama16b,-zawrs,-zba,-zbb,-zbc,-zbkb,-zbkc,-zbkx,-zbs,-zcb,-zcd,-zce,-zcf,-zclsd,-zcmop,-zcmp,-zcmt,-zdinx,-zfa,-zfbfmin,-zfh,-zfhmin,-zfinx,-zhinx,-zhinxmin,-zic64b,-zicbom,-zicbop,-zicboz,-ziccamoa,-ziccamoc,-ziccid,-ziccif,-zicclsm,-ziccrse,-zicntr,-zicond,-zicsr,-zifencei,-zihintntl,-zihintpause,-zihpm,-zilsd,-zimop,-zk,-zkn,-zknd,-zkne,-zknh,-zkr,-zks,-zksed,-zksh,-zkt,-ztso,-zvbb,-zvbc,-zve32f,-zve32x,-zve64d,-zve64f,-zve64x,-zvfbfmin,-zvfbfwma,-zvfh,-zvfhmin,-zvkb,-zvkg,-zvkn,-zvknc,-zvkned,-zvkng,-zvknha,-zvknhb,-zvks,-zvksc,-zvksed,-zvksg,-zvksh,-zvkt,-zvl1024b,-zvl128b,-zvl16384b,-zvl2048b,-zvl256b,-zvl32768b,-zvl32b,-zvl4096b,-zvl512b,-zvl64b,-zvl65536b,-zvl8192b" }
 attributes #1 = { nounwind speculatable willreturn memory(none) }
 
@@ -167,4 +279,4 @@ attributes #1 = { nounwind speculatable willreturn memory(none) }
 !2 = !{!"rv32i2p1_m2p0_a2p1_c2p0_zmmul1p0_zaamo1p0_zalrsc1p0_zca1p0"}
 !3 = !{i32 7, !"frame-pointer", i32 2}
 !4 = !{i32 8, !"SmallDataLimit", i32 0}
-!5 = !{!"clang version 23.0.0git (https://github.com/mattwalsh13/encrypted-riscv.git 8d205d95349609eea2e2ea8083ba302d4c4ffcf6)"}
+!5 = !{!"clang version 23.0.0git (https://github.com/mattwalsh13/encrypted-riscv.git f76699ba303d347bc32d95d9fa55bdedc4c52bed)"}

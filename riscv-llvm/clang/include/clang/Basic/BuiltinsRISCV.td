@@ -285,10 +285,14 @@ include "clang/Basic/BuiltinsRISCVXMIPS.td"
 //===----------------------------------------------------------------------===//
 // Encrypted extensions.
 //===----------------------------------------------------------------------===//
-// Loop through every unique instruction name prefix
-foreach op = ["add", "sub", "sll", "slt", "sltu", "xor", "srl", "sra", "or", "and", "addi", "slti", "sltiu", "xori", "ori", "andi", "slli", "srli", "srai"] in {
-  // Use '#' to glue the prefix to '_enc' dynamically
+// R-type
+foreach op = ["add", "sub", "sll", "slt", "sltu", "xor", "srl", "sra", "or", "and"] in {
   def op # "_enc" : RISCVBuiltin<"unsigned int(unsigned int, unsigned int)">;
+}
+
+// I-type
+foreach op = ["addi", "slti", "sltiu", "xori", "ori", "andi", "slli", "srli", "srai"] in {
+  def op # "_enc" : RISCVBuiltin<"unsigned int(unsigned int, _Constant unsigned int)">;
 }
 
 def cmov_enc : RISCVBuiltin<"unsigned int(unsigned int, unsigned int, unsigned int)">;
