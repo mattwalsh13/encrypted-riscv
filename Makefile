@@ -16,3 +16,6 @@ clean:
 
 clang:
 	cd ./riscv-llvm/build && ninja -j4 clang lld
+
+preprocess:
+	python3 preprocess.py pre_main.c main.c
