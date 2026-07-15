@@ -167,4 +167,4 @@ attributes #1 = { nounwind speculatable willreturn memory(none) }
 !2 = !{!"rv32i2p1_m2p0_a2p1_c2p0_zmmul1p0_zaamo1p0_zalrsc1p0_zca1p0"}
 !3 = !{i32 7, !"frame-pointer", i32 2}
 !4 = !{i32 8, !"SmallDataLimit", i32 0}
-!5 = !{!"clang version 23.0.0git (https://github.com/mattwalsh13/encrypted-riscv.git b84dd28981e9d71da790eeb2d5a502eb0bcd6892)"}
+!5 = !{!"clang version 23.0.0git (https://github.com/mattwalsh13/encrypted-riscv.git 8d205d95349609eea2e2ea8083ba302d4c4ffcf6)"}

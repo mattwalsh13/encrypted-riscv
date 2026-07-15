@@ -2135,12 +2135,22 @@ include "llvm/IR/IntrinsicsRISCVXMIPS.td"
 //===----------------------------------------------------------------------===//
 let TargetPrefix = "riscv" in {
 
-  class RiscvRTypeEnc
-      : Intrinsic<[llvm_i32_ty], [llvm_i32_ty, llvm_i32_ty],
-              [IntrNoMem, IntrWillReturn, IntrSpeculatable]>;
+  class RiscvRTypeEnc : Intrinsic<[llvm_i32_ty], [llvm_i32_ty, llvm_i32_ty],
+                        [IntrNoMem, IntrWillReturn, IntrSpeculatable]>;
 
   foreach op = ["add", "sub", "sll", "slt", "sltu", "xor", "srl", "sra", "or", "and"] in {
-    // Use pure string concatenation to name the definition
     def "int_riscv_" # op # "_enc" : RiscvRTypeEnc;
   }
+
+  class RiscvITypeEnc : Intrinsic<[llvm_i32_ty], [llvm_i32_ty, llvm_i32_ty], 
+                        [IntrNoMem, IntrWillReturn, IntrSpeculatable, ImmArg<ArgIndex<1>>]>;
+
+  foreach op = ["addi", "slti", "sltiu", "xori", "ori", "andi", "slli", "srli", "srai"] in {
+    def "int_riscv_" # op # "_enc" : RiscvITypeEnc;
+  }
+
+  class RiscvR4TypeEnc : Intrinsic<[llvm_i32_ty], [llvm_i32_ty, llvm_i32_ty, llvm_i32_ty],
+                         [IntrNoMem, IntrWillReturn, IntrSpeculatable]>;
+
+  def int_riscv_cmov_enc : RiscvR4TypeEnc;
 }

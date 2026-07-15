@@ -1631,6 +1631,18 @@ MAP_ENC_BUILTIN(sra_enc)
 MAP_ENC_BUILTIN(or_enc)
 MAP_ENC_BUILTIN(and_enc)
 
+MAP_ENC_BUILTIN(addi_enc)
+MAP_ENC_BUILTIN(slti_enc)
+MAP_ENC_BUILTIN(sltiu_enc)
+MAP_ENC_BUILTIN(xori_enc)
+MAP_ENC_BUILTIN(ori_enc)
+MAP_ENC_BUILTIN(andi_enc)
+MAP_ENC_BUILTIN(slli_enc)
+MAP_ENC_BUILTIN(srli_enc)
+MAP_ENC_BUILTIN(srai_enc)
+
+MAP_ENC_BUILTIN(cmov_enc)
+
 #undef MAP_ENC_BUILTIN
 
 

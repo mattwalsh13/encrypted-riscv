@@ -1,250 +1,139 @@
-// === ENCRYPTED ADD ===
-def ADD_ENC : Instruction {
-    bits<32> Inst;
-    bits<32> SoftFail = 0;
-    bits<5> rs2;
-    bits<5> rs1;
-    bits<5> rd;
-    let Namespace = "RISCV";
-    let Size = 4;
-    let hasSideEffects = 0;
-    let mayLoad = 0;
-    let mayStore = 0;
-    let Inst{31-25} = 0b0000000; /*funct7*/  
-    let Inst{24-20} = rs2;
-    let Inst{19-15} = rs1;
-    let Inst{14-12} = 0b000; /*funct3*/
-    let Inst{11-7} = rd;
-    let Inst{6-0} = 0b1011011; /*opcode*/
-    dag OutOperandList = (outs GPR:$rd);
-    dag InOperandList = (ins GPR:$rs1, GPR:$rs2);
-    let AsmString = "add_enc\t$rd, $rs1, $rs2";
+// === ENCRYPTED R-TYPE INSTRUCTIONS ===
+class RTuple<string n, bits<3> f3, bits<7> f7> {
+  string name = n;
+  bits<3> funct3 = f3;
+  bits<7> funct7 = f7;
 }
 
-def : Pat<(int_riscv_add_enc GPR:$rs1, GPR:$rs2), (ADD_ENC GPR:$rs1, GPR:$rs2)>;
-
-// === ENCRYPTED SUB ===
-def SUB_ENC : Instruction {
+foreach op = [
+  RTuple<"ADD",  0b000, 0b0000000>,
+  RTuple<"SUB",  0b000, 0b0100000>,
+  RTuple<"SLL",  0b001, 0b0000000>,
+  RTuple<"SLT",  0b010, 0b0000000>,
+  RTuple<"SLTU", 0b011, 0b0000000>,
+  RTuple<"XOR",  0b100, 0b0000000>,
+  RTuple<"SRL",  0b101, 0b0000000>,
+  RTuple<"SRA",  0b101, 0b0100000>,
+  RTuple<"OR",   0b110, 0b0000000>,
+  RTuple<"AND",  0b111, 0b0000000>
+] in {
+  def op.name # "_ENC" : Instruction {
     bits<32> Inst;
     bits<32> SoftFail = 0;
-    bits<5> rs2;
-    bits<5> rs1;
+    bits<5> rs2; 
+    bits<5> rs1; 
     bits<5> rd;
-    let Namespace = "RISCV";
+    let Namespace = "RISCV"; 
     let Size = 4;
-    let hasSideEffects = 0;
-    let mayLoad = 0;
+    let hasSideEffects = 0; 
+    let mayLoad = 0; 
     let mayStore = 0;
-    let Inst{31-25} = 0b0100000; /*funct7*/  
+
+    let Inst{31-25} = op.funct7;
     let Inst{24-20} = rs2;
     let Inst{19-15} = rs1;
-    let Inst{14-12} = 0b000; /*funct3*/
-    let Inst{11-7} = rd;
-    let Inst{6-0} = 0b1011011; /*opcode*/
+    let Inst{14-12} = op.funct3;
+    let Inst{11-7}  = rd;
+    let Inst{6-0}   = 0b1011011;
+
     dag OutOperandList = (outs GPR:$rd);
-    dag InOperandList = (ins GPR:$rs1, GPR:$rs2);
-    let AsmString = "sub_enc\t$rd, $rs1, $rs2";
+    dag InOperandList  = (ins GPR:$rs1, GPR:$rs2);
+    let AsmString = !tolower(op.name) # "_enc\t$rd, $rs1, $rs2";
+  }
+
+  def : Pat<(!cast<Intrinsic>("int_riscv_" # !tolower(op.name) # "_enc") GPR:$rs1, GPR:$rs2), 
+            (!cast<Instruction>(op.name # "_ENC") GPR:$rs1, GPR:$rs2)>;
 }
 
-def : Pat<(int_riscv_sub_enc GPR:$rs1, GPR:$rs2), (SUB_ENC GPR:$rs1, GPR:$rs2)>;
-
-// === ENCRYPTED SLL ===
-def SLL_ENC : Instruction {
+// === ENCRYPTED I-TYPE INSTRUCTIONS ===
+class ITuple<string n, bits<3> f3> {
+  string name = n;
+  bits<3> funct3 = f3;
+}
+// Non-shifting
+foreach op = [
+  ITuple<"ADDI",  0b000>,
+  ITuple<"SLTI",  0b010>,
+  ITuple<"SLTIU", 0b011>,
+  ITuple<"XORI",  0b100>,
+  ITuple<"ORI",   0b110>,
+  ITuple<"ANDI",  0b111>,
+] in {
+  def op.name # "_ENC" : Instruction {
     bits<32> Inst;
     bits<32> SoftFail = 0;
-    bits<5> rs2;
-    bits<5> rs1;
-    bits<5> rd;
-    let Namespace = "RISCV";
-    let Size = 4;
-    let hasSideEffects = 0;
-    let mayLoad = 0;
-    let mayStore = 0;
-    let Inst{31-25} = 0b0000000; /*funct7*/  
-    let Inst{24-20} = rs2;
+    bits<12> imm; bits<5> rs1; bits<5> rd;
+    let Namespace = "RISCV"; let Size = 4;
+    let hasSideEffects = 0; let mayLoad = 0; let mayStore = 0;
+
+    let Inst{31-20} = imm;
     let Inst{19-15} = rs1;
-    let Inst{14-12} = 0b001; /*funct3*/
-    let Inst{11-7} = rd;
-    let Inst{6-0} = 0b1011011; /*opcode*/
+    let Inst{14-12} = op.funct3;
+    let Inst{11-7}  = rd;
+    let Inst{6-0}   = 0b0001011;
+
     dag OutOperandList = (outs GPR:$rd);
-    dag InOperandList = (ins GPR:$rs1, GPR:$rs2);
-    let AsmString = "sll_enc\t$rd, $rs1, $rs2";
+    dag InOperandList  = (ins GPR:$rs1, simm12:$imm);
+    let AsmString = !tolower(op.name) # "_enc\t$rd, $rs1, $imm";
+  }
+
+  def : Pat<(!cast<Intrinsic>("int_riscv_" # !tolower(op.name) # "_enc") GPR:$rs1, imm:$imm), 
+            (!cast<Instruction>(op.name # "_ENC") GPR:$rs1, i32imm:$imm)>;
 }
 
-def : Pat<(int_riscv_sll_enc GPR:$rs1, GPR:$rs2), (SLL_ENC GPR:$rs1, GPR:$rs2)>;
-
-// === ENCRYPTED SLT ===
-def SLT_ENC : Instruction {
+// Shifting
+foreach op = [
+  RTuple<"SLLI",  0b001, 0b0000000>,
+  RTuple<"SRLI",  0b101, 0b0000000>,
+  RTuple<"SRAI",  0b101, 0b0100000>,
+] in {
+  def op.name # "_ENC" : Instruction {
     bits<32> Inst;
     bits<32> SoftFail = 0;
-    bits<5> rs2;
-    bits<5> rs1;
-    bits<5> rd;
-    let Namespace = "RISCV";
-    let Size = 4;
-    let hasSideEffects = 0;
-    let mayLoad = 0;
-    let mayStore = 0;
-    let Inst{31-25} = 0b0000000; /*funct7*/  
-    let Inst{24-20} = rs2;
+    bits<5> shamt; bits<5> rs1; bits<5> rd;
+    let Namespace = "RISCV"; let Size = 4;
+    let hasSideEffects = 0; let mayLoad = 0; let mayStore = 0;
+
+    let Inst{31-25} = op.funct7;
+    let Inst{24-20} = shamt;
     let Inst{19-15} = rs1;
-    let Inst{14-12} = 0b010; /*funct3*/
-    let Inst{11-7} = rd;
-    let Inst{6-0} = 0b1011011; /*opcode*/
+    let Inst{14-12} = op.funct3;
+    let Inst{11-7}  = rd;
+    let Inst{6-0}   = 0b0001011;
+
     dag OutOperandList = (outs GPR:$rd);
-    dag InOperandList = (ins GPR:$rs1, GPR:$rs2);
-    let AsmString = "slt_enc\t$rd, $rs1, $rs2";
+    dag InOperandList  = (ins GPR:$rs1, uimm5:$shamt);
+    let AsmString = !tolower(op.name) # "_enc\t$rd, $rs1, $shamt";
+  }
+
+  def : Pat<(!cast<Intrinsic>("int_riscv_" # !tolower(op.name) # "_enc") GPR:$rs1, imm:$shamt), 
+            (!cast<Instruction>(op.name # "_ENC") GPR:$rs1, i32imm:$shamt)>;
 }
 
-def : Pat<(int_riscv_slt_enc GPR:$rs1, GPR:$rs2), (SLT_ENC GPR:$rs1, GPR:$rs2)>;
-
-// === ENCRYPTED SLTU ===
-def SLTU_ENC : Instruction {
+// === ENCRYPTED CMOV ===
+def CMOV_ENC : Instruction {
     bits<32> Inst;
     bits<32> SoftFail = 0;
-    bits<5> rs2;
-    bits<5> rs1;
+    bits<5> rs3;
+    bits<5> rs2; 
+    bits<5> rs1; 
     bits<5> rd;
-    let Namespace = "RISCV";
+    let Namespace = "RISCV"; 
     let Size = 4;
-    let hasSideEffects = 0;
-    let mayLoad = 0;
+    let hasSideEffects = 0; 
+    let mayLoad = 0; 
     let mayStore = 0;
-    let Inst{31-25} = 0b0000000; /*funct7*/  
+    let Inst{31-27} = rs3;
+    let Inst{26-25} = 0b11;
     let Inst{24-20} = rs2;
     let Inst{19-15} = rs1;
-    let Inst{14-12} = 0b011; /*funct3*/
-    let Inst{11-7} = rd;
-    let Inst{6-0} = 0b1011011; /*opcode*/
+    let Inst{14-12} = 0b101;
+    let Inst{11-7}  = rd;
+    let Inst{6-0}   = 0b0101011;
+
     dag OutOperandList = (outs GPR:$rd);
-    dag InOperandList = (ins GPR:$rs1, GPR:$rs2);
-    let AsmString = "sltu_enc\t$rd, $rs1, $rs2";
+    dag InOperandList  = (ins GPR:$rs1, GPR:$rs2, GPR:$rs3);
+    let AsmString = "cmov_enc\t$rd, $rs3, $rs2, $rs1";
 }
 
-def : Pat<(int_riscv_sltu_enc GPR:$rs1, GPR:$rs2), (SLTU_ENC GPR:$rs1, GPR:$rs2)>;
-
-// === ENCRYPTED XOR ===
-def XOR_ENC : Instruction {
-    bits<32> Inst;
-    bits<32> SoftFail = 0;
-    bits<5> rs2;
-    bits<5> rs1;
-    bits<5> rd;
-    let Namespace = "RISCV";
-    let Size = 4;
-    let hasSideEffects = 0;
-    let mayLoad = 0;
-    let mayStore = 0;
-    let Inst{31-25} = 0b0000000; /*funct7*/  
-    let Inst{24-20} = rs2;
-    let Inst{19-15} = rs1;
-    let Inst{14-12} = 0b100; /*funct3*/
-    let Inst{11-7} = rd;
-    let Inst{6-0} = 0b1011011; /*opcode*/
-    dag OutOperandList = (outs GPR:$rd);
-    dag InOperandList = (ins GPR:$rs1, GPR:$rs2);
-    let AsmString = "xor_enc\t$rd, $rs1, $rs2";
-}
-
-def : Pat<(int_riscv_xor_enc GPR:$rs1, GPR:$rs2), (XOR_ENC GPR:$rs1, GPR:$rs2)>;
-
-// === ENCRYPTED SRL ===
-def SRL_ENC : Instruction {
-    bits<32> Inst;
-    bits<32> SoftFail = 0;
-    bits<5> rs2;
-    bits<5> rs1;
-    bits<5> rd;
-    let Namespace = "RISCV";
-    let Size = 4;
-    let hasSideEffects = 0;
-    let mayLoad = 0;
-    let mayStore = 0;
-    let Inst{31-25} = 0b0000000; /*funct7*/  
-    let Inst{24-20} = rs2;
-    let Inst{19-15} = rs1;
-    let Inst{14-12} = 0b101; /*funct3*/
-    let Inst{11-7} = rd;
-    let Inst{6-0} = 0b1011011; /*opcode*/
-    dag OutOperandList = (outs GPR:$rd);
-    dag InOperandList = (ins GPR:$rs1, GPR:$rs2);
-    let AsmString = "srl_enc\t$rd, $rs1, $rs2";
-}
-
-def : Pat<(int_riscv_srl_enc GPR:$rs1, GPR:$rs2), (SRL_ENC GPR:$rs1, GPR:$rs2)>;
-
-// === ENCRYPTED SRA ===
-def SRA_ENC : Instruction {
-    bits<32> Inst;
-    bits<32> SoftFail = 0;
-    bits<5> rs2;
-    bits<5> rs1;
-    bits<5> rd;
-    let Namespace = "RISCV";
-    let Size = 4;
-    let hasSideEffects = 0;
-    let mayLoad = 0;
-    let mayStore = 0;
-    let Inst{31-25} = 0b0100000; /*funct7*/  
-    let Inst{24-20} = rs2;
-    let Inst{19-15} = rs1;
-    let Inst{14-12} = 0b101; /*funct3*/
-    let Inst{11-7} = rd;
-    let Inst{6-0} = 0b1011011; /*opcode*/
-    dag OutOperandList = (outs GPR:$rd);
-    dag InOperandList = (ins GPR:$rs1, GPR:$rs2);
-    let AsmString = "sra_enc\t$rd, $rs1, $rs2";
-}
-
-def : Pat<(int_riscv_sra_enc GPR:$rs1, GPR:$rs2), (SRA_ENC GPR:$rs1, GPR:$rs2)>;
-
-// === ENCRYPTED OR ===
-def OR_ENC : Instruction {
-    bits<32> Inst;
-    bits<32> SoftFail = 0;
-    bits<5> rs2;
-    bits<5> rs1;
-    bits<5> rd;
-    let Namespace = "RISCV";
-    let Size = 4;
-    let hasSideEffects = 0;
-    let mayLoad = 0;
-    let mayStore = 0;
-    let Inst{31-25} = 0b0000000; /*funct7*/  
-    let Inst{24-20} = rs2;
-    let Inst{19-15} = rs1;
-    let Inst{14-12} = 0b110; /*funct3*/
-    let Inst{11-7} = rd;
-    let Inst{6-0} = 0b1011011; /*opcode*/
-    dag OutOperandList = (outs GPR:$rd);
-    dag InOperandList = (ins GPR:$rs1, GPR:$rs2);
-    let AsmString = "or_enc\t$rd, $rs1, $rs2";
-}
-
-def : Pat<(int_riscv_or_enc GPR:$rs1, GPR:$rs2), (OR_ENC GPR:$rs1, GPR:$rs2)>;
-
-// === ENCRYPTED AND ===
-def AND_ENC : Instruction {
-    bits<32> Inst;
-    bits<32> SoftFail = 0;
-    bits<5> rs2;
-    bits<5> rs1;
-    bits<5> rd;
-    let Namespace = "RISCV";
-    let Size = 4;
-    let hasSideEffects = 0;
-    let mayLoad = 0;
-    let mayStore = 0;
-    let Inst{31-25} = 0b0000000; /*funct7*/  
-    let Inst{24-20} = rs2;
-    let Inst{19-15} = rs1;
-    let Inst{14-12} = 0b111; /*funct3*/
-    let Inst{11-7} = rd;
-    let Inst{6-0} = 0b1011011; /*opcode*/
-    dag OutOperandList = (outs GPR:$rd);
-    dag InOperandList = (ins GPR:$rs1, GPR:$rs2);
-    let AsmString = "and_enc\t$rd, $rs1, $rs2";
-}
-
-def : Pat<(int_riscv_and_enc GPR:$rs1, GPR:$rs2), (AND_ENC GPR:$rs1, GPR:$rs2)>;
-
+def : Pat<(int_riscv_cmov_enc GPR:$rs1, GPR:$rs2, GPR:$rs3), (CMOV_ENC GPR:$rs1, GPR:$rs2, GPR:$rs3)>;
