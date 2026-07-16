@@ -4,9 +4,8 @@ int main() {
 	int_enc x = { 0xD };
     int_enc y = { 0x7 };
     int_enc result;
-    int _1 = 0;
 
-    result = x _ y;
+    result = slt_enc(x, y);
     result = sub_enc(x, y);
 
     result = addi_enc(x, 13);
