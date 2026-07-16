@@ -1,0 +1,16 @@
+{
+    "folders": [
+        { "path": "." },
+        { "path": "src" }
+    ],
+    "settings": {
+        "emeraldwalk.runonsave": {
+            "commands": [
+                {
+                    "match": "main\\.c$",
+                    "cmd": "python3 ../preprocess.py main.c ../main.pp.c"
+                }
+            ]
+        }
+    }
+}

@@ -5,10 +5,10 @@ int main() {
     int_enc y = { 0x7 };
     int_enc result;
 
-    result = enc_add(x, y);
-    result = enc_sub(x, y);
+    result = x _ y;
+    result = sub_enc(x, y);
 
-    result = enc_add(x, 13);
+    result = addi_enc(x, 13);
 
     return 0;
 }

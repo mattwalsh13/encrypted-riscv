@@ -7,23 +7,7 @@ Disassembly of section .text:
        0: 451d         	li	a0, 0x7
        2: 45b5         	li	a1, 0xd
        4: 00a5865b     	add_enc	a2, a1, a0
-       8: 40a5865b     	sub_enc	a2, a1, a0
-       c: 00a5965b     	sll_enc	a2, a1, a0
-      10: 00a5a65b     	slt_enc	a2, a1, a0
-      14: 00a5b65b     	sltu_enc	a2, a1, a0
-      18: 00a5c65b     	xor_enc	a2, a1, a0
-      1c: 00a5d65b     	srl_enc	a2, a1, a0
-      20: 40a5d65b     	sra_enc	a2, a1, a0
-      24: 00a5e65b     	or_enc	a2, a1, a0
-      28: 00a5f65b     	and_enc	a2, a1, a0
-      2c: 00d5860b     	addi_enc	a2, a1, 0xd
-      30: 00d5a60b     	slti_enc	a2, a1, 0xd
-      34: 00d5b60b     	sltiu_enc	a2, a1, 0xd
-      38: 00d5c60b     	xori_enc	a2, a1, 0xd
-      3c: 00d5f60b     	andi_enc	a2, a1, 0xd
-      40: 00d5960b     	slli_enc	a2, a1, 0xd
-      44: 00d5d60b     	srli_enc	a2, a1, 0xd
-      48: 40d5d60b     	srai_enc	a2, a1, 0xd
-      4c: 66a5d52b     	cmov_enc	a0, a2, a0, a1
-      50: 4501         	li	a0, 0x0
-      52: 8082         	ret
+       8: 00b6065b     	add_enc	a2, a2, a1
+       c: 40a5855b     	sub_enc	a0, a1, a0
+      10: 4501         	li	a0, 0x0
+      12: 8082         	ret

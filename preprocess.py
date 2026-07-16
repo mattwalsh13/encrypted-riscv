@@ -28,12 +28,12 @@ def main(pre_file: str, processed_file: str) -> None:
             # Operation done
             if any(op in line for op in ops):
                 op = next(op for op in ops if op in line)
-                leading_whitespace = re.match(r"^\s*", unstripped_line).group(0)
+                leading_whitespace = re.match(r"^\s*", unstripped_line).group(0) # type: ignore
                 tokens = line.strip().split("=")
                 dest = tokens[0].strip(" ")
                 operand_1 = tokens[1].split(op)[0].strip(" ")
                 operand_2 = tokens[1].split(op)[1].rstrip(";").strip(" ")
-                lines[i] = f"{leading_whitespace}{dest} = enc_{op_str_lookup[op]}({operand_1}, {operand_2});\n"
+                lines[i] = f"{leading_whitespace}{dest} = {op_str_lookup[op]}_enc({operand_1}, {operand_2});\n"
 
     with open(processed_file, "w") as file:
         for line in lines:
