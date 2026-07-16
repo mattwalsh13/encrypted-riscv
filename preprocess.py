@@ -1,6 +1,15 @@
 import sys
 import re
 
+
+def is_number(s: str):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+
+
 def main(pre_file: str, processed_file: str) -> None:
     """
     Takes a normal .c file that uses int_enc, and injects the correct function call in place of the operation., also ensure encrypted values stay hidden.
@@ -14,8 +23,8 @@ def main(pre_file: str, processed_file: str) -> None:
             lines.append(line)
 
     variables: set[str] = set()
-    ops = ["+", "-"]
-    op_strs = ["add", "sub"]
+    ops = ["+", "-", "<<", "<", "^", ">>", "|", "&"]
+    op_strs = ["add", "sub", "sll", "slt", "xor", "srl", "or", "and"]
     op_str_lookup = dict(zip(ops, op_strs))
 
     for i, unstripped_line in enumerate(lines):
@@ -33,7 +42,11 @@ def main(pre_file: str, processed_file: str) -> None:
                 dest = tokens[0].strip(" ")
                 operand_1 = tokens[1].split(op)[0].strip(" ")
                 operand_2 = tokens[1].split(op)[1].rstrip(";").strip(" ")
-                lines[i] = f"{leading_whitespace}{dest} = {op_str_lookup[op]}_enc({operand_1}, {operand_2});\n"
+
+                if is_number(operand_2):
+                    lines[i] = f"{leading_whitespace}{dest} = {op_str_lookup[op]}i_enc({operand_1}, {operand_2});\n"
+                else:
+                    lines[i] = f"{leading_whitespace}{dest} = {op_str_lookup[op]}_enc({operand_1}, {operand_2});\n"
 
     with open(processed_file, "w") as file:
         for line in lines:
