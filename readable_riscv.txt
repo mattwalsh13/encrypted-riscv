@@ -3,11 +3,18 @@ main.o:	file format elf32-littleriscv
 
 Disassembly of section .text:
 
-00000000 <main>:
-       0: 451d         	li	a0, 0x7
-       2: 45b5         	li	a1, 0xd
-       4: 00a5865b     	add_enc	a2, a1, a0
-       8: 00b6065b     	add_enc	a2, a2, a1
-       c: 40a5855b     	sub_enc	a0, a1, a0
-      10: 4501         	li	a0, 0x0
-      12: 8082         	ret
+00000000 <addDouble>:
+       0: 00b5055b     	add_enc	a0, a0, a1
+       4: 00b5055b     	add_enc	a0, a0, a1
+       8: 8082         	ret
+
+0000000a <main>:
+       a: 451d         	li	a0, 0x7
+       c: 45b5         	li	a1, 0xd
+       e: 00a5f65b     	and_enc	a2, a1, a0
+      12: 40a5865b     	sub_enc	a2, a1, a0
+      16: 00d5860b     	addi_enc	a2, a1, 0xd
+      1a: 00a585db     	add_enc	a1, a1, a0
+      1e: 00a5855b     	add_enc	a0, a1, a0
+      22: 4501         	li	a0, 0x0
+      24: 8082         	ret
