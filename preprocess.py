@@ -65,49 +65,37 @@ def tokenize(src: str) -> List[Token]:
         kind = m.lastgroup
         if kind in ('comment_ml', 'comment_sl', 'preproc'):
             continue
+        if kind in ('hex', 'bin', 'oct', 'dec', 'float'):
+            kind = 'literal'   # collapse all numeric-literal variants into one label
         tokens.append((kind, m.group(), m.start())) # type: ignore
     return tokens
 
 
-def find_statement_spans(tokens: List[Token]) -> Iterator[Span]:
-    """
-    Input:
-        tokens: List[Token] — the full token list for one file, as
-                produced by tokenize() above. This function does NOT
-                take a string; it takes the already-tokenized list.
+# A Span is (start_idx, end_idx, kind), kind is 'stmt' or 'header'.
+#   'stmt'   -> a ';'-terminated statement/declaration (as before)
+#   'header' -> a function signature or if/while/for/switch condition,
+#               i.e. everything up to (not including) the '{' that opens
+#               a block
+Span = Tuple[int, int, str]
 
-    Output:
-        Iterator[Span] — yields one (start_idx, end_idx) pair per
-        ';'-terminated statement found inside a function body
-        (brace_depth >= 1), where the ';' itself is at paren_depth 0.
-        start_idx and end_idx are both indices into the `tokens` list
-        (e.g. tokens[start_idx] is the first token of the statement,
-        tokens[end_idx] is the ';' token that ends it).
-
-        To get just the expression tokens (no trailing ';'), slice:
-            tokens[start_idx:end_idx]
-
-    Example:
-        tokens = tokenize("void f() { result = x + y; }")
-        list(find_statement_spans(tokens))
-        -> [(6, 11)]   # tokens[6:11] == ['result','=','x','+','y'], tokens[11] == ';'
-    """
+def find_statement_spans(tokens: List[Token]) -> Iterator[Tuple[int, int, str]]:
     block_depth = 0
     paren_depth = 0
     stmt_start = None
-    brace_kind_stack: List[str] = []   # 'block' or 'init', one entry per open '{'
+    brace_kind_stack: List[str] = []
     prev_text = None
 
     for i, (_, text, _) in enumerate(tokens):
         if text == '{':
             is_block_open = prev_text in (')', 'else', 'do', None)
             if is_block_open:
+                if stmt_start is not None:
+                    yield (stmt_start, i, 'header')
                 brace_kind_stack.append('block')
                 block_depth += 1
                 stmt_start = None
             else:
                 brace_kind_stack.append('init')
-                # initializer brace: do NOT reset stmt_start, do NOT touch block_depth
             prev_text = text
             continue
 
@@ -116,7 +104,6 @@ def find_statement_spans(tokens: List[Token]) -> Iterator[Span]:
             if closed_kind == 'block':
                 block_depth -= 1
                 stmt_start = None
-            # else: closing an initializer '}' — statement continues normally
             prev_text = text
             continue
 
@@ -124,16 +111,43 @@ def find_statement_spans(tokens: List[Token]) -> Iterator[Span]:
             paren_depth += 1
         elif text in (')', ']'):
             paren_depth -= 1
-        elif text == ';' and paren_depth == 0 and block_depth >= 1:
+        elif text == ';' and paren_depth == 0:
             if stmt_start is not None:
-                yield (stmt_start, i)
+                yield (stmt_start, i, 'stmt')
             stmt_start = i + 1
             prev_text = text
             continue
 
-        if stmt_start is None and block_depth >= 1:
+        if stmt_start is None:
             stmt_start = i
         prev_text = text
+
+
+def find_paren_contents(tokens: List[Token], start_idx: int, end_idx: int) -> Optional[Tuple[int, int]]:
+    """
+    Given a 'header' span's (start_idx, end_idx), finds the first '(' in
+    that range and its matching ')'. Returns (inner_start, inner_end) —
+    token indices for the content strictly between them (i.e. tokens[inner_start:inner_end]
+    is everything inside the parens, no parens included).
+    Returns None if there's no '(' in the span (e.g. a bare "else" or "do").
+    """
+    open_idx = None
+    for j in range(start_idx, end_idx):
+        if tokens[j][1] == '(':
+            open_idx = j
+            break
+    if open_idx is None:
+        return None
+
+    depth = 0
+    for j in range(open_idx, end_idx):
+        if tokens[j][1] == '(':
+            depth += 1
+        elif tokens[j][1] == ')':
+            depth -= 1
+            if depth == 0:
+                return (open_idx + 1, j)
+    return None  # unmatched — malformed input
 
 
 CONTROL_KEYWORDS = {"if", "while", "for", "switch", "sizeof"}
@@ -190,7 +204,7 @@ OP_LOOKUP = {
     "<<": "sll",
     ">>": "srr",
     "-": "sub",
-
+    ">": "sgt"
 }
 
 
@@ -293,10 +307,13 @@ identifiers: List[Tuple[str, str, int]] = []
 
 
 def log_identifiers(tokens: List[Token], scope: int) -> None:
+    print(f"Logging at scope {scope}: {tokens}")
     return
 
 
 def rewrite_line(tokens: List[Token], scope: int) -> str:
+    if tokens[0][1] in ["int", "int_enc"]:
+        pass
     return ""
 
 
@@ -348,32 +365,60 @@ def main(pre_file: str, processed_file: str) -> None:
     scope_at: List[int] = compute_scopes(tokens)
     spans = list(find_statement_spans(tokens))
 
-    for start_idx, end_idx in spans:
+    # --- Pass 1: log every span, unchanged, regardless of kind ---
+    for start_idx, end_idx, kind in spans:
         stmt_tokens = tokens[start_idx:end_idx]
         if not stmt_tokens:
             continue
         scope = scope_at[start_idx]
         log_identifiers(stmt_tokens, scope)
 
+    # --- Pass 2: rewrite ---
     out_parts: List[str] = []
     cursor = 0
-    for start_idx, end_idx in spans:
-        stmt_tokens = tokens[start_idx:end_idx]
-        if not stmt_tokens:
+
+    for start_idx, end_idx, kind in spans:
+        if start_idx >= end_idx:
             continue
-        stmt_start_pos = stmt_tokens[0][2]
-        last_tok = stmt_tokens[-1]
-        stmt_end_pos = last_tok[2] + len(last_tok[1])
-        out_parts.append(src[cursor:stmt_start_pos])
         scope = scope_at[start_idx]
-        rewritten = rewrite_line(stmt_tokens, scope)
-        out_parts.append(rewritten)
-        cursor = stmt_end_pos
+
+        if kind == 'stmt':
+            # unchanged from before: whole statement goes to rewrite_line
+            stmt_tokens = tokens[start_idx:end_idx]
+            stmt_start_pos = stmt_tokens[0][2]
+            last_tok = stmt_tokens[-1]
+            stmt_end_pos = last_tok[2] + len(last_tok[1])
+
+            out_parts.append(src[cursor:stmt_start_pos])
+            out_parts.append(rewrite_line(stmt_tokens, scope))
+            cursor = stmt_end_pos
+
+        else:  # kind == 'header'
+            paren_range = find_paren_contents(tokens, start_idx, end_idx)
+            if paren_range is None:
+                # e.g. bare "else" / "do" — nothing to rewrite, copy verbatim
+                continue
+            inner_start, inner_end = paren_range
+            inner_tokens = tokens[inner_start:inner_end]
+            if not inner_tokens:
+                continue
+
+            inner_start_pos = inner_tokens[0][2]
+            last_tok = inner_tokens[-1]
+            inner_end_pos = last_tok[2] + len(last_tok[1])
+
+            # copy everything up to the '(' contents verbatim (return type,
+            # function name, keyword like "if"/"while", and the '(' itself)
+            out_parts.append(src[cursor:inner_start_pos])
+            out_parts.append(rewrite_line(inner_tokens, scope))
+            cursor = inner_end_pos
+            # the closing ')' and anything after (up to '{') gets copied
+            # verbatim on the next iteration's gap-fill
+
     out_parts.append(src[cursor:])
 
     with open(processed_file, "w") as f:
         f.write("".join(out_parts))
-
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:

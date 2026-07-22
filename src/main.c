@@ -1,5 +1,7 @@
 #include "encrypted_types.h"
 
+int_enc globalCount = 0;
+
 int main() {
     int_enc list[5] = {1, 2, 3, 4, 5};
     int_enc x = 0xD;
@@ -25,6 +27,13 @@ int main() {
     x--;
 
     x;
+
+    int i = 0;
+
+    while (i < 10) {
+        int_enc x = 13;
+        i++;
+    }
 
     // result = addDouble(x, y);
 
