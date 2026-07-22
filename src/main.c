@@ -12,6 +12,11 @@ int main() {
 
     result = x + 13;
 
+    result = x + 13;
+    result = x + 13;
+    result = x + 13;
+    result = x + 13;
+
     // int_enc a = x + y, b = y - x;
 
     x += y;

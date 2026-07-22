@@ -1,6 +1,6 @@
 import sys
 import re
-from typing import List, Tuple, Iterator
+from typing import List, Tuple, Iterator, Dict, Optional
 
 
 # leading_whitespace = re.match(r"^\s*", unstripped_line).group(0) # type: ignore
@@ -262,128 +262,118 @@ def convert_expression(tokens: List[Token]) -> str:
 
 
 """
-Declaration ✓
-Assignment ✓ 
+Declaration
+Assignment
     Ternary 
-    Add brackets to literals ✓
-Compound (+=) ✓
+    Add brackets to literals
+Compound (+=)
     a += b -> a = a + b
     a -= b -> a = a - b
     a++ -> a = a + 1
     a-- -> a = a - 1
-Return ✓
+Return
 Raw function calls
     Containing int_enc
     Inside expressions
 Struct access
-Arrays ✓
-
+Arrays
 Variable scope handling
+
 Don't like these:
 Multi-declarations
 Multi-initializations
 """
+# Each scope is identified by a unique int. scope_parent[s] = the scope
+# that directly encloses s (or None for the global/file scope).
+scope_parent: Dict[int, Optional[int]] = {0: None}   # 0 = global scope
+next_scope_id = 1
 
-ints: List[str] = []
-int_encs: List[str] = []
-int_enc_arrays: List[str] = []
+# type, name, and the scope it was declared in
+identifiers: List[Tuple[str, str, int]] = []
 
-def converter(str_in: str, tokens: List[Token]) -> str:
-    converted_str = str_in
-    expression = ""
 
-    #print(f"{str_in} === {tokens}\n")
-    first_token = tokens[0][1]
+def log_identifiers(tokens: List[Token], scope: int) -> None:
+    return
 
-    if first_token == "int_enc":
-        if len(tokens) < 3:
-            # int_enc declaration
-            int_encs.append(tokens[1][1])
-        elif tokens[2][1] == "[":
-            # int_enc array
-            int_enc_arrays.append(tokens[1][1])
-            if len(tokens) < 6:
-                # int_enc array declaration
-                pass
-            else:
-                # int_enc array initialization
-                converted_str = f"int_enc {tokens[1][1]}[{tokens[3][1]}] = {{"
-                for i, element_token in enumerate(tokens[7:len(tokens) - 1:2]):
-                    if i != 0:
-                        converted_str += ", "
-                    element_token_as_list = [element_token] # Done so that it can be passed to the converter easily
-                    converted_str += f"{convert_expression(element_token_as_list)}"
-                converted_str += "}"
-        elif tokens[2][1] == ",":
-            # Multi-declaration
-            pass
-        else:
-            # int_enc initialization
-            int_encs.append(tokens[1][1])
-            expression = convert_expression([token for token in tokens[3:len(tokens)]])
-            converted_str = f"int_enc {tokens[1][1]} = {expression}"
-    elif first_token == "int":
-        # int declaration
-        ints.append(tokens[1][1])
-    elif first_token == "return":
-        # return statement
-        if len(tokens) > 1 and any(any(s in t[1] for s in int_encs) for t in tokens):
-            # int_enc being returned
-            expression = convert_expression([token for token in tokens[1:len(tokens)]])
-            converted_str = f"return {expression}"
-    elif first_token in int_encs:
-        # int_enc assignment
-        if len(tokens) > 2:
-            if tokens[1][1] != "=":
-                # Augmented assignment operator
-                expression = convert_expression([tokens[0], (tokens[1]), ('punct', '(', -1)] + [token for token in tokens[3:len(tokens)]] + [('punct', ')', -1)])
-            else:
-                # Normal assignment
-                expression = convert_expression([token for token in tokens[2:len(tokens)]])
-            converted_str = f"{tokens[0][1]} = {expression}"
-        elif len(tokens) > 1 and (tokens[1][1] == "++" or tokens[1][1] == "--"):
-            # Unary assignment
-            converted_str = f"{tokens[0][1]} = {convert_expression([(tokens[0]), ('punct', tokens[1][1][0], -1), ('dec', '1', -1)])}"
-    return converted_str
+
+def rewrite_line(tokens: List[Token], scope: int) -> str:
+    return ""
+
+
+def compute_scopes(tokens: List[Token]) -> List[int]:
+    """
+    Returns a list the same length as tokens, where scope_at[i] is the
+    scope ID that tokens[i] lexically belongs to. Also populates the
+    module-level scope_parent dict as a side effect.
+    """
+    global next_scope_id
+    scope_at: List[int] = []
+    scope_stack: List[int] = [0]   # start in global scope (id 0)
+
+    for _, text, _ in tokens:
+        if text == '{':
+            new_scope = next_scope_id
+            next_scope_id += 1
+            scope_parent[new_scope] = scope_stack[-1]
+            scope_stack.append(new_scope)
+            scope_at.append(new_scope)   # the '{' itself belongs to the new scope
+            continue
+        elif text == '}':
+            scope_at.append(scope_stack[-1])  # '}' belongs to the scope it's closing
+            if len(scope_stack) > 1:
+                scope_stack.pop()
+            continue
+        scope_at.append(scope_stack[-1])
+
+    return scope_at
+
+
+def lookup_identifier(name: str, scope: int) -> Optional[str]:
+    """Returns the declared type of `name` as visible from `scope`,
+    searching outward through enclosing scopes (innermost-first — this
+    is what makes shadowing work: an inner declaration is found before
+    an outer one with the same name)."""
+    s: Optional[int] = scope
+    while s is not None:
+        for typ, nm, decl_scope in identifiers:
+            if nm == name and decl_scope == s:
+                return typ
+        s = scope_parent.get(s)
+    return None
 
 
 def main(pre_file: str, processed_file: str) -> None:
-    """
-    Takes a normal .c file that uses int_enc, and injects the correct function call in place of the operation., also ensure encrypted values stay hidden.
-    """
-    src: str = open(pre_file).read()          # str  -> whole file contents
-    tokens: List[Token] = tokenize(src)        # str  -> List[Token]
-    spans: Iterator[Span] = find_statement_spans(tokens)   # List[Token] -> Iterator[(int, int)]
-
-    # Build the output by copying src verbatim, except inside statement spans
-    # we care about, where we substitute the converted text.
-    out_parts: List[str] = []
-    cursor = 0  # character position in src we've copied up to
+    src: str = open(pre_file).read()
+    tokens: List[Token] = tokenize(src)
+    scope_at: List[int] = compute_scopes(tokens)
+    spans = list(find_statement_spans(tokens))
 
     for start_idx, end_idx in spans:
         stmt_tokens = tokens[start_idx:end_idx]
         if not stmt_tokens:
             continue
+        scope = scope_at[start_idx]
+        log_identifiers(stmt_tokens, scope)
 
-        stmt_start_pos = stmt_tokens[0][2]          # char pos of first token
+    out_parts: List[str] = []
+    cursor = 0
+    for start_idx, end_idx in spans:
+        stmt_tokens = tokens[start_idx:end_idx]
+        if not stmt_tokens:
+            continue
+        stmt_start_pos = stmt_tokens[0][2]
         last_tok = stmt_tokens[-1]
-        stmt_end_pos = last_tok[2] + len(last_tok[1])  # char pos just after last token
-
-        # Copy everything from cursor up to the start of this statement verbatim
+        stmt_end_pos = last_tok[2] + len(last_tok[1])
         out_parts.append(src[cursor:stmt_start_pos])
-
-        # Convert just this statement's text
-        original_stmt_text = src[stmt_start_pos:stmt_end_pos]
-        rewritten = converter(original_stmt_text, stmt_tokens)
+        scope = scope_at[start_idx]
+        rewritten = rewrite_line(stmt_tokens, scope)
         out_parts.append(rewritten)
-
         cursor = stmt_end_pos
-
-    # Copy whatever's left after the last statement (closing braces, etc.)
     out_parts.append(src[cursor:])
 
     with open(processed_file, "w") as f:
         f.write("".join(out_parts))
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
