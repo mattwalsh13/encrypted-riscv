@@ -260,21 +260,40 @@ Multi-initializations
 # that directly encloses s (or None for the global/file scope).
 scope_parent: Dict[int, Optional[int]] = {0: None}   # 0 = global scope
 next_scope_id = 1
-
-# type, name, and the scope it was declared in
+# type ("funct_{return_type}" for functions), name, and the scope it was declared in
 identifiers: List[Tuple[str, str, int]] = []
 
 
-def log_identifiers(tokens: List[Token], scope: int) -> None:
+def log_identifiers(tokens: List[Token], scope: int, scope_at: List[int]) -> None:
+    print("="*100)
     print(f"Logging at scope {scope}: {tokens}")
-    if tokens[0][1] in ["int", "int_enc"]:
-            pass
+
+    if tokens[0][1] in ["int_enc", "int"]:
+        if len(tokens) < 3 or tokens[2][1] == "=":
+            # variable declaration or initialization
+            identifiers.append((tokens[0][1], tokens[1][1], scope))
+        elif tokens[2][1] == "[":
+            # array declaration or initialization
+            identifiers.append((tokens[0][1], tokens[1][1], scope))
+        elif tokens[2][1] == "(":
+            # function declaration
+            identifiers.append((f"funct_{tokens[0][1]}", tokens[1][1], scope))
+            # add arguments to the function scope
+            scope_inside_funct = scope_at[next((i for i, (_, name, _) in enumerate(tokens) if name == "{"), -1)]
+            idx_close_paren = next((i for i, (_, name, _) in enumerate(tokens) if name == ")"), -1)
+
+            for i, token in enumerate(tokens[2:idx_close_paren:3]):
+                identifiers.append((token[1], tokens[i + 1][1], scope_inside_funct))
+
+            # to add: nested function compatibility
+
     return
 
 
 def rewrite_line(tokens: List[Token], scope: int) -> str:
+    print("="*100)
     print(f"Rewriting at scope {scope}: {tokens}")
-    return ""
+    return " ".join([token[1] for token in tokens])
 
 
 def compute_scopes(tokens: List[Token]) -> List[int]:
@@ -331,7 +350,10 @@ def main(pre_file: str, processed_file: str) -> None:
         if not stmt_tokens:
             continue
         scope = scope_at[start_idx]
-        log_identifiers(stmt_tokens, scope)
+        log_identifiers(stmt_tokens, scope, scope_at)
+
+    print("="*100)
+    print(identifiers)
 
     # --- Pass 2: rewrite ---
     out_parts: List[str] = []
