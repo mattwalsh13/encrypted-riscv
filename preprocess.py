@@ -186,15 +186,6 @@ ICP = {
     "(": 15
 }
 
-
-def is_str_integer(val: str):
-    try:
-        int(val)
-        return True
-    except ValueError:
-        return False
-
-
 OP_LOOKUP = {
     "+": "add",
     "<": "slt",
@@ -208,71 +199,39 @@ OP_LOOKUP = {
 }
 
 
-def getFunctionStr(num1: str, num2: str, op: str) -> str:
-    num1_is_imm = is_str_integer(num1)
-    num2_is_imm = is_str_integer(num2)
-
-    if num1_is_imm and num2_is_imm:
-        return str(eval(f"{num1} {op} {num2}"))
-    elif num1_is_imm:
-        pass
-    elif num2_is_imm:
-        pass
-    else:
-        pass
-
-    return ""
-
-
-def convert_expression(tokens: List[Token]) -> str:
+def convert_expression(tokens: List[Token]) -> List[Token]:
     tokens_strs = [token[1] for token in tokens]
 
     print(f"Converting {" ".join(tokens_strs)}")
 
-    contains_only_literals = True
+    return tokens
 
-    for token in tokens:
-        if token[0] == "ident":
-            contains_only_literals = False
-            break
+    # Need to handle statements with literal
 
-    if contains_only_literals:
-        return f"{{{" ".join(tokens_strs)}}}"
-
-    opStack: List[str] = []
-    postfix = ""
+    opStack: List[Token] = []
+    postfix: List[Token] = []
 
     for token in tokens:
         if token[0] == "punct":
-            op = token[1]
 
-            if op == ")":
-                while opStack and not opStack[0] == "(":
-                    postfix += f"{opStack.pop(0)} "
-                if opStack[0] == "(":
+            if token[1] == ")":
+                while opStack and not opStack[0][1] == "(":
+                    postfix.append(opStack.pop(0))
+                if opStack[0][1] == "(":
                     opStack.pop(0)
             else:
                 while opStack and ICP[op] <= ISP[opStack[0]]: # type: ignore
-                    postfix += f"{opStack.pop(0)} "
-                opStack.insert(0, op)
+                    postfix.append(opStack.pop(0))
+                opStack.insert(0, token)
         else:
-            postfix += f"{token[1]} "
+            postfix.append(token)
     
     while opStack:
-        postfix += f"{opStack.pop(0)} "
+        postfix.append(opStack.pop(0))
 
-    postfix = postfix.rstrip()
     print(f"Postfix: {postfix}")
 
-    # Postfix to function calls
-    postfix_list = postfix.split()
-    operands: List[str] = []
-
-    for token in postfix_list:
-        if token in ICP:
-            operands.insert(0, f"{getFunctionStr(operands.pop(0), operands.pop(0), token)}")
-
-    return postfix.rstrip()
+    return postfix
 
 
 """
@@ -308,12 +267,13 @@ identifiers: List[Tuple[str, str, int]] = []
 
 def log_identifiers(tokens: List[Token], scope: int) -> None:
     print(f"Logging at scope {scope}: {tokens}")
+    if tokens[0][1] in ["int", "int_enc"]:
+            pass
     return
 
 
 def rewrite_line(tokens: List[Token], scope: int) -> str:
-    if tokens[0][1] in ["int", "int_enc"]:
-        pass
+    print(f"Rewriting at scope {scope}: {tokens}")
     return ""
 
 
