@@ -3,21 +3,12 @@ import re
 from typing import List, Tuple, Iterator, Dict, Optional
 
 
-# leading_whitespace = re.match(r"^\s*", unstripped_line).group(0) # type: ignore
-
 # A Token is (kind: str, text: str, pos: int)
 #   kind = one of: 'ident', 'number', 'string', 'char', 'punct'
 #          (comment/preproc tokens are matched but discarded, never returned)
 #   text = the exact substring matched, e.g. 'x', '+', '"hello"', '123'
 #   pos  = character offset into the original src string where this token starts
 Token = Tuple[str, str, int]
-
-# A Span is (start_idx, end_idx): both are indices INTO the tokens list
-# (not character offsets), marking a half-open... actually here end_idx
-# points AT the terminating ';' token itself (inclusive endpoint,
-# exclusive of the ';' when you slice — see usage note below).
-Span = Tuple[int, int]
-
 
 TOKEN_RE = re.compile(r'''
     (?P<comment_ml>/\*.*?\*/)              |
@@ -33,6 +24,7 @@ TOKEN_RE = re.compile(r'''
     (?P<ident>[A-Za-z_]\w*)                |
     (?P<punct>==|!=|<=|>=|&&|\|\||\+\+|--|->|[{}()\[\];,=+\-*/%<>!&|^~])
 ''', re.VERBOSE | re.MULTILINE)
+
 
 def tokenize(src: str) -> List[Token]:
     """
@@ -78,8 +70,7 @@ def tokenize(src: str) -> List[Token]:
 #               a block
 Span = Tuple[int, int, str]
 
-def find_statement_spans(tokens: List[Token]) -> Iterator[Tuple[int, int, str]]:
-    block_depth = 0
+def find_statement_spans(tokens: List[Token]) -> Iterator[Span]:
     paren_depth = 0
     stmt_start = None
     brace_kind_stack: List[str] = []
@@ -92,7 +83,6 @@ def find_statement_spans(tokens: List[Token]) -> Iterator[Tuple[int, int, str]]:
                 if stmt_start is not None:
                     yield (stmt_start, i, 'header')
                 brace_kind_stack.append('block')
-                block_depth += 1
                 stmt_start = None
             else:
                 brace_kind_stack.append('init')
@@ -102,7 +92,6 @@ def find_statement_spans(tokens: List[Token]) -> Iterator[Tuple[int, int, str]]:
         elif text == '}':
             closed_kind = brace_kind_stack.pop() if brace_kind_stack else 'block'
             if closed_kind == 'block':
-                block_depth -= 1
                 stmt_start = None
             prev_text = text
             continue
@@ -147,7 +136,7 @@ def find_paren_contents(tokens: List[Token], start_idx: int, end_idx: int) -> Op
             depth -= 1
             if depth == 0:
                 return (open_idx + 1, j)
-    return None  # unmatched — malformed input
+    return None
 
 
 CONTROL_KEYWORDS = {"if", "while", "for", "switch", "sizeof"}
@@ -206,7 +195,7 @@ def convert_expression(tokens: List[Token]) -> List[Token]:
 
     return tokens
 
-    # Need to handle statements with literal
+    # Need to handle statements with literals
 
     opStack: List[Token] = []
     postfix: List[Token] = []
@@ -283,7 +272,7 @@ def log_identifiers(tokens: List[Token], scope: int, scope_at: List[int]) -> Non
             idx_close_paren = next((i for i, (_, name, _) in enumerate(tokens) if name == ")"), -1)
 
             for i, token in enumerate(tokens[2:idx_close_paren:3]):
-                identifiers.append((token[1], tokens[i + 1][1], scope_inside_funct))
+                identifiers.append((token[1], tokens[i + 1 + 2][1], scope_inside_funct))
 
             # to add: nested function compatibility
 
@@ -325,10 +314,12 @@ def compute_scopes(tokens: List[Token]) -> List[int]:
 
 
 def lookup_identifier(name: str, scope: int) -> Optional[str]:
-    """Returns the declared type of `name` as visible from `scope`,
+    """
+    Returns the declared type of `name` as visible from `scope`,
     searching outward through enclosing scopes (innermost-first — this
     is what makes shadowing work: an inner declaration is found before
-    an outer one with the same name)."""
+    an outer one with the same name).
+    """
     s: Optional[int] = scope
     while s is not None:
         for typ, nm, decl_scope in identifiers:
@@ -344,8 +335,8 @@ def main(pre_file: str, processed_file: str) -> None:
     scope_at: List[int] = compute_scopes(tokens)
     spans = list(find_statement_spans(tokens))
 
-    # --- Pass 1: log every span, unchanged, regardless of kind ---
-    for start_idx, end_idx, kind in spans:
+    # Pass 1: log every span
+    for start_idx, end_idx, _ in spans:
         stmt_tokens = tokens[start_idx:end_idx]
         if not stmt_tokens:
             continue
@@ -355,7 +346,7 @@ def main(pre_file: str, processed_file: str) -> None:
     print("="*100)
     print(identifiers)
 
-    # --- Pass 2: rewrite ---
+    # Pass 2: rewrite
     out_parts: List[str] = []
     cursor = 0
 
