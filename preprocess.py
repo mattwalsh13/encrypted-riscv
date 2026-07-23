@@ -307,11 +307,15 @@ def rewrite_line(tokens: List[Token], scope: int) -> str:
                 elif type == "int_enc":
                     if tokens[1][1] == "=":
                         # int_enc assignment
-                        return function_parse(tokens[2:], scope)[1]
+                        return f"{tokens[0][1]} = {function_parse(tokens[2:], scope)[1]}"
                     elif tokens[1][1] == "++":
                         return f"{tokens[0][1]} = addi_enc({tokens[0][1]}, 1)"
                     elif tokens[1][1] == "--":
                         return f"{tokens[0][1]} = subi_enc({tokens[0][1]}, 1)"
+                    elif tokens[1][1] == "+" and tokens[2][1] == "=":
+                        return function_parse([tokens[0], ("punct", "+", -1), ("punct", "(", -1)] + tokens[3:] + [("punct", ")", -1)], scope)[1]
+                    elif tokens[1][1] == "-" and tokens[2][1] == "=":
+                        return function_parse([tokens[0], ("punct", "-", -1), ("punct", "(", -1)] + tokens[3:] + [("punct", ")", -1)], scope)[1]
 
     return " ".join([token[1] for token in tokens])
 

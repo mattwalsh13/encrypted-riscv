@@ -9,15 +9,15 @@ int main() {
     int_enc result;
     int_enc z , w;
 
-    xy&;
-    xy+;
+    result = xy&;
+    result = xy+;
 
-    x13+;
+    result = x13+;
 
-    x13+;
-    x13+;
-    x13+;
-    x13+;
+    result = x13+;
+    result = x13+;
+    result = x13+;
+    result = x13+;
 
     // int_enc a = x + y, b = y - x;
 
@@ -37,7 +37,7 @@ int main() {
 
     addDouble(x,y);
 
-    addDouble(x,y);
+    result = addDouble(x,y);
 
     int_enc x = 0xD;
     int_enc y = 0x7;
