@@ -188,12 +188,12 @@ OP_LOOKUP = {
 }
 
 
-def convert_expression(tokens: List[Token]) -> List[Token]:
+def convert_expression(tokens: List[Token]) -> Token:
     tokens_strs = [token[1] for token in tokens]
 
     print(f"Converting {" ".join(tokens_strs)}")
 
-    return tokens
+    return ("unknown", " ".join(tokens_strs), tokens[0][2])
 
     # Need to handle statements with literals
 
@@ -271,17 +271,47 @@ def log_identifiers(tokens: List[Token], scope: int, scope_at: List[int]) -> Non
             scope_inside_funct = scope_at[next((i for i, (_, name, _) in enumerate(tokens) if name == "{"), -1)]
             idx_close_paren = next((i for i, (_, name, _) in enumerate(tokens) if name == ")"), -1)
 
-            for i, token in enumerate(tokens[2:idx_close_paren:3]):
-                identifiers.append((token[1], tokens[i + 1 + 2][1], scope_inside_funct))
+            for i, token in enumerate(tokens[3:idx_close_paren:3]):
+                identifiers.append((token[1], tokens[(i * 3) + 1 + 3][1], scope_inside_funct))
 
-            # to add: nested function compatibility
+            # to add: nested function compatibility ?
 
     return
 
 
-def rewrite_line(tokens: List[Token], scope: int) -> str:
+def rewrite_line(tokens: List[Token], scope: int, scope_at: List[int]) -> str:
     print("="*100)
     print(f"Rewriting at scope {scope}: {tokens}")
+
+    if tokens[0][1] in ["int_enc", "int"]:
+            if len(tokens) < 3 or tokens[2][1] == "=":
+                # variable declaration or initialization
+                pass
+            elif tokens[2][1] == "[":
+                # array declaration or initialization
+                pass
+            elif tokens[2][1] == "(":
+                # function declaration
+                pass
+    elif tokens[0][1] in [ident[1] for ident in identifiers]:
+            # assignment, function call, or useless line
+            if len(tokens) == 1:
+                # useless line like "x;"
+                pass
+            else:
+                type = lookup_identifier(tokens[0][1], tokens[0][2])
+    
+                if type == None:
+                    print("Syntax error: variable name not recognized in this scope")
+                elif type.startswith("funct_"):
+                    # function call
+                    print(f"Parsing function: {tokens}")
+                    parsed = function_parse(tokens)
+                    print(f"Parsed: {parsed}")
+                elif type == "int_enc":
+                    # int_enc assignment
+                    pass
+
     return " ".join([token[1] for token in tokens])
 
 
@@ -329,6 +359,112 @@ def lookup_identifier(name: str, scope: int) -> Optional[str]:
     return None
 
 
+def function_parse(tokens: List[Token]) -> Token:
+    """
+    Takes in a function call in the form of tokens. Breaks down into the arguments, and converts said arguments (handle nested calls)
+    """
+
+    print("="*100)
+    print(f"Parsing: {tokens}")
+
+    for i, token in enumerate(tokens[0:len(tokens) - 1]):
+        if token[0].startswith("funct_"):
+            function_call = extract_function_call(tokens[i:len(tokens)])
+            args: List[List[Token]] = get_arguments(function_call)
+            new_args: List[Token] = []
+
+            for arg in args:
+                new_args.append(function_parse(arg))
+
+            return replace_args(function_call, new_args)
+
+    return convert_expression(tokens)
+
+
+def extract_function_call(tokens: List[Token]) -> List[Token]:
+    """
+    Returns tokens contained by the function call at the start of the list.
+    """
+    print(f"Extracting from: {tokens}")
+
+    depth = 0 # Tracks if the parenthesis the parser hits is at the right depth and signals the end of the function call
+
+    for i, token in enumerate(tokens):
+        if token[1] == ")":
+            if depth == 1:
+                print(f"Extracted: {tokens[0:i + 1]}")
+                return tokens[0:i + 1]
+            else:
+                depth -= 1
+        elif token[1] == "(":
+            depth += 1
+
+    return tokens
+
+
+def get_arguments(tokens: List[Token]) -> List[List[Token]]:
+    """
+    Helper function for function_parse. Takes the function call tokens and returns a list of lists of tokens. Each element in the first corresponds to an argument. The inner list is the contents of that specific argument.
+    """
+
+    print(f"Getting arguments: {tokens}")
+
+    depth = 0 # Tracks if the parenthesis the parser hits is at the right depth and signals the end of the function call
+
+    args: List[List[Token]] = []
+    curr_arg: List[Token] = []
+
+    for token in tokens:
+        if token[1] == ")":
+            depth -= 1
+        elif token[1] == "(":
+            depth += 1
+
+        if token[1] == ",":
+            args.append(curr_arg)
+            curr_arg = []
+        else:
+            curr_arg.append(token)
+
+    return args
+
+
+def replace_args(function_call: List[Token], new_args: List[Token]) -> Token:
+    """
+    Parses the function call and replaces each argument with the simplified version, returns a merged token.
+    """
+
+    print(f"Improving: {function_call} with {new_args}")
+
+    new_args_with_commas: List[Token] = []
+
+    for arg in new_args[0: len(new_args) - 1]:
+        new_args_with_commas.append(arg)
+        new_args_with_commas.append(("punct", ",", arg[2]))
+
+    new_args_with_commas.append(new_args[len(new_args) - 1])
+
+    function_call_with_new_args = function_call[0:2]
+    for arg in new_args_with_commas:
+        function_call_with_new_args.append(arg)
+    function_call_with_new_args.append(function_call[len(function_call) - 1])
+
+    return merge_tokens(function_call_with_new_args)
+
+
+def merge_tokens(tokens: List[Token]) -> Token:
+    """
+    Merges the given list of tokens together, in the order they are given. The returned token will have the return type and scope of the first token.
+    """
+
+    token_str = ""
+
+    for token in tokens:
+        token_str += token[1]
+
+    return (tokens[0][0], token_str, tokens[0][2])
+
+
 def main(pre_file: str, processed_file: str) -> None:
     src: str = open(pre_file).read()
     tokens: List[Token] = tokenize(src)
@@ -363,7 +499,7 @@ def main(pre_file: str, processed_file: str) -> None:
             stmt_end_pos = last_tok[2] + len(last_tok[1])
 
             out_parts.append(src[cursor:stmt_start_pos])
-            out_parts.append(rewrite_line(stmt_tokens, scope))
+            out_parts.append(rewrite_line(stmt_tokens, scope, scope_at))
             cursor = stmt_end_pos
 
         else:  # kind == 'header'
@@ -383,7 +519,7 @@ def main(pre_file: str, processed_file: str) -> None:
             # copy everything up to the '(' contents verbatim (return type,
             # function name, keyword like "if"/"while", and the '(' itself)
             out_parts.append(src[cursor:inner_start_pos])
-            out_parts.append(rewrite_line(inner_tokens, scope))
+            out_parts.append(rewrite_line(inner_tokens, scope, scope_at))
             cursor = inner_end_pos
             # the closing ')' and anything after (up to '{') gets copied
             # verbatim on the next iteration's gap-fill

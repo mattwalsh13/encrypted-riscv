@@ -35,12 +35,14 @@ int main() {
         i ++;
     }
 
-    // result = addDouble(x, y);
+    addDouble ( x , y );
+
+    result = addDouble ( x , y );
 
     return 0;
 }
 
-int_enc addDouble(int_enc a , int_enc b) {
+int_enc addDouble(int_enc a , int_enc b , int_enc useless) {
     int_enc c = a + b;
     return c + b;
 }
