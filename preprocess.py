@@ -193,23 +193,18 @@ def convert_expression(tokens: List[Token]) -> Token:
 
     print(f"Converting {" ".join(tokens_strs)}")
 
-    return ("unknown", " ".join(tokens_strs), tokens[0][2])
-
-    # Need to handle statements with literals
-
     opStack: List[Token] = []
     postfix: List[Token] = []
 
     for token in tokens:
         if token[0] == "punct":
-
             if token[1] == ")":
                 while opStack and not opStack[0][1] == "(":
                     postfix.append(opStack.pop(0))
                 if opStack[0][1] == "(":
                     opStack.pop(0)
             else:
-                while opStack and ICP[op] <= ISP[opStack[0]]: # type: ignore
+                while opStack and ICP[token[1]] <= ISP[opStack[0]]: # type: ignore
                     postfix.append(opStack.pop(0))
                 opStack.insert(0, token)
         else:
@@ -218,9 +213,9 @@ def convert_expression(tokens: List[Token]) -> Token:
     while opStack:
         postfix.append(opStack.pop(0))
 
-    print(f"Postfix: {postfix}")
+    print(f"Postfix: {merge_tokens(postfix)}")
 
-    return postfix
+    return merge_tokens(postfix)
 
 
 """
@@ -279,7 +274,7 @@ def log_identifiers(tokens: List[Token], scope: int, scope_at: List[int]) -> Non
     return
 
 
-def rewrite_line(tokens: List[Token], scope: int, scope_at: List[int]) -> str:
+def rewrite_line(tokens: List[Token], scope: int) -> str:
     print("="*100)
     print(f"Rewriting at scope {scope}: {tokens}")
 
@@ -299,18 +294,24 @@ def rewrite_line(tokens: List[Token], scope: int, scope_at: List[int]) -> str:
                 # useless line like "x;"
                 pass
             else:
-                type = lookup_identifier(tokens[0][1], tokens[0][2])
-    
+                type = lookup_identifier(tokens[0][1], scope)
+
                 if type == None:
                     print("Syntax error: variable name not recognized in this scope")
                 elif type.startswith("funct_"):
                     # function call
                     print(f"Parsing function: {tokens}")
-                    parsed = function_parse(tokens)
+                    parsed = function_parse(tokens, scope)
                     print(f"Parsed: {parsed}")
+                    return parsed[1]
                 elif type == "int_enc":
-                    # int_enc assignment
-                    pass
+                    if tokens[1][1] == "=":
+                        # int_enc assignment
+                        return function_parse(tokens[2:], scope)[1]
+                    elif tokens[1][1] == "++":
+                        return f"{tokens[0][1]} = addi_enc({tokens[0][1]}, 1)"
+                    elif tokens[1][1] == "--":
+                        return f"{tokens[0][1]} = subi_enc({tokens[0][1]}, 1)"
 
     return " ".join([token[1] for token in tokens])
 
@@ -359,22 +360,23 @@ def lookup_identifier(name: str, scope: int) -> Optional[str]:
     return None
 
 
-def function_parse(tokens: List[Token]) -> Token:
+def function_parse(tokens: List[Token], scope: int) -> Token:
     """
     Takes in a function call in the form of tokens. Breaks down into the arguments, and converts said arguments (handle nested calls)
     """
-
-    print("="*100)
     print(f"Parsing: {tokens}")
 
     for i, token in enumerate(tokens[0:len(tokens) - 1]):
-        if token[0].startswith("funct_"):
+        type = lookup_identifier(token[1], scope)
+        if type == None:
+            print("Identifier not found")
+        elif type.startswith("funct_"):
             function_call = extract_function_call(tokens[i:len(tokens)])
             args: List[List[Token]] = get_arguments(function_call)
             new_args: List[Token] = []
 
             for arg in args:
-                new_args.append(function_parse(arg))
+                new_args.append(function_parse(arg, scope))
 
             return replace_args(function_call, new_args)
 
@@ -399,7 +401,7 @@ def extract_function_call(tokens: List[Token]) -> List[Token]:
         elif token[1] == "(":
             depth += 1
 
-    return tokens
+    return tokens # Should never be returned
 
 
 def get_arguments(tokens: List[Token]) -> List[List[Token]]:
@@ -414,18 +416,21 @@ def get_arguments(tokens: List[Token]) -> List[List[Token]]:
     args: List[List[Token]] = []
     curr_arg: List[Token] = []
 
-    for token in tokens:
+    for token in tokens[2:-1]:
         if token[1] == ")":
             depth -= 1
         elif token[1] == "(":
             depth += 1
 
-        if token[1] == ",":
+        if token[1] == "," and depth == 0:
             args.append(curr_arg)
             curr_arg = []
         else:
             curr_arg.append(token)
 
+    args.append(curr_arg) # Add the last argument
+
+    print(f"Arguments found: {args}")
     return args
 
 
@@ -434,11 +439,11 @@ def replace_args(function_call: List[Token], new_args: List[Token]) -> Token:
     Parses the function call and replaces each argument with the simplified version, returns a merged token.
     """
 
-    print(f"Improving: {function_call} with {new_args}")
+    print(f"Replacing args: {function_call} with {new_args}")
 
     new_args_with_commas: List[Token] = []
 
-    for arg in new_args[0: len(new_args) - 1]:
+    for arg in new_args[0:len(new_args) - 1]:
         new_args_with_commas.append(arg)
         new_args_with_commas.append(("punct", ",", arg[2]))
 
@@ -449,14 +454,17 @@ def replace_args(function_call: List[Token], new_args: List[Token]) -> Token:
         function_call_with_new_args.append(arg)
     function_call_with_new_args.append(function_call[len(function_call) - 1])
 
-    return merge_tokens(function_call_with_new_args)
+    merged_function = merge_tokens(function_call_with_new_args)
+    print(f"Merged: {merged_function}")
+    return merged_function
 
 
 def merge_tokens(tokens: List[Token]) -> Token:
     """
-    Merges the given list of tokens together, in the order they are given. The returned token will have the return type and scope of the first token.
+    Merges the given list of tokens together, in the order they are given. The returned token will have the return type and cursor of the first token.
     """
 
+    print(f"Merging: {tokens}")
     token_str = ""
 
     for token in tokens:
@@ -499,7 +507,7 @@ def main(pre_file: str, processed_file: str) -> None:
             stmt_end_pos = last_tok[2] + len(last_tok[1])
 
             out_parts.append(src[cursor:stmt_start_pos])
-            out_parts.append(rewrite_line(stmt_tokens, scope, scope_at))
+            out_parts.append(rewrite_line(stmt_tokens, scope))
             cursor = stmt_end_pos
 
         else:  # kind == 'header'
@@ -519,7 +527,8 @@ def main(pre_file: str, processed_file: str) -> None:
             # copy everything up to the '(' contents verbatim (return type,
             # function name, keyword like "if"/"while", and the '(' itself)
             out_parts.append(src[cursor:inner_start_pos])
-            out_parts.append(rewrite_line(inner_tokens, scope, scope_at))
+            print(f"scope: {scope}")
+            out_parts.append(rewrite_line(inner_tokens, scope))
             cursor = inner_end_pos
             # the closing ')' and anything after (up to '{') gets copied
             # verbatim on the next iteration's gap-fill

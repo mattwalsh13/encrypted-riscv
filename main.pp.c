@@ -1,6 +1,6 @@
 #include "encrypted_types.h"
 
-int_enc globalCount = 0;
+// int_enc globalCount = 0;
 
 int main() {
     int_enc list [ 5 ] = { 1 , 2 , 3 , 4 , 5 };
@@ -9,22 +9,22 @@ int main() {
     int_enc result;
     int_enc z , w;
 
-    result = x & y;
-    result = x + y;
+    xy&;
+    xy+;
 
-    result = x + 13;
+    x13+;
 
-    result = x + 13;
-    result = x + 13;
-    result = x + 13;
-    result = x + 13;
+    x13+;
+    x13+;
+    x13+;
+    x13+;
 
     // int_enc a = x + y, b = y - x;
 
     x + = y;
 
-    x ++;
-    x --;
+    x = addi_enc(x, 1);
+    x = subi_enc(x, 1);
 
     x;
 
@@ -35,9 +35,15 @@ int main() {
         i ++;
     }
 
-    addDouble ( x , y );
+    addDouble(x,y);
 
-    result = addDouble ( x , y );
+    addDouble(x,y);
+
+    int_enc x = 0xD;
+    int_enc y = 0x7;
+    int_enc z = 0x0;
+
+    addDouble(x,y,z);
 
     return 0;
 }
