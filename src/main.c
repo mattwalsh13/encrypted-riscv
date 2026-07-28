@@ -13,15 +13,12 @@ int main() {
     result = x + y;
 
     result = x + 13;
-
-    result = x + 13;
-    result = x + 13;
-    result = x + 13;
-    result = x + 13;
+    result = 13 + x;
 
     // int_enc a = x + y, b = y - x;
 
     x += y;
+    x -= y;
 
     x++;
     x--;
@@ -35,12 +32,10 @@ int main() {
         i++;
     }
 
-    addDouble(x, y);
+    addDouble(x, y, x);
 
-    result = addDouble(x, y);
+    result = addDouble(x, y, x);
 
-    int_enc x = 0xD;
-    int_enc y = 0x7;
     int_enc z = 0x0;
 
     addDouble(x, y, z);

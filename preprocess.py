@@ -188,7 +188,7 @@ OP_LOOKUP = {
 }
 
 
-def convert_expression(tokens: List[Token]) -> Token:
+def convert_expression(tokens: List[Token], scope: int) -> Token:
     tokens_strs = [token[1] for token in tokens]
 
     print(f"Converting {" ".join(tokens_strs)}")
@@ -204,18 +204,66 @@ def convert_expression(tokens: List[Token]) -> Token:
                 if opStack[0][1] == "(":
                     opStack.pop(0)
             else:
-                while opStack and ICP[token[1]] <= ISP[opStack[0]]: # type: ignore
+                while opStack and ICP[token[1]] <= ISP[opStack[0][1]]: # type: ignore
                     postfix.append(opStack.pop(0))
                 opStack.insert(0, token)
         else:
             postfix.append(token)
-    
+
     while opStack:
         postfix.append(opStack.pop(0))
 
     print(f"Postfix: {merge_tokens(postfix)}")
 
-    return merge_tokens(postfix)
+    # Convert postfix token list into function calls
+    operands: List[Token] = []
+    open_paren = ("punct", "(", -1)
+    comma_space = ("punct", ", ", -1)
+    close_paren = ("punct", ")", -1)
+
+    simp_expr = ()
+
+    print("="*100)
+    print("Converting to enc instructions")
+    print("="*100)
+
+    for token in postfix:
+        print(operands)
+
+        if token[1] in OP_LOOKUP:
+            op = OP_LOOKUP[token[1]]
+            oper_1_type = operands[0][0]
+            oper_2_type = operands[1][0]
+
+            print(oper_1_type)
+            print(oper_2_type)
+
+            if oper_1_type == "literal" and oper_2_type  == "literal":
+                simp_expr = merge_tokens([open_paren, operands.pop(-2), token, operands.pop(), close_paren])
+                simp_expr = ("imm", simp_expr[1], simp_expr[2])
+            elif oper_1_type == "literal":
+                op_str = "i" + op + "_enc"
+                simp_expr = merge_tokens([open_paren, operands.pop(-2), comma_space, operands.pop(), close_paren])
+                simp_expr = ("int_enc", op_str + simp_expr[1], simp_expr[2])
+            elif oper_2_type == "literal":
+                op_str = op + "i" + "_enc"
+                simp_expr = merge_tokens([open_paren, operands.pop(-2), comma_space, operands.pop(), close_paren])
+                simp_expr = ("int_enc", op_str + simp_expr[1], simp_expr[2])
+            else:
+                op_str = op + "_enc"
+                simp_expr = merge_tokens([open_paren, operands.pop(-2), comma_space, operands.pop(), close_paren])
+                simp_expr = ("int_enc", op_str + simp_expr[1], simp_expr[2])
+
+            operands.append(simp_expr)
+        else:
+            if token[0] == "ident":
+                operands.append((lookup_identifier(token[1], scope), token[1], token[2])) # pyright: ignore[reportArgumentType]
+            else:
+                operands.append(token)
+
+    print(f"Finished conversion {operands}")
+
+    return operands.pop()
 
 
 """
@@ -278,10 +326,13 @@ def rewrite_line(tokens: List[Token], scope: int) -> str:
     print("="*100)
     print(f"Rewriting at scope {scope}: {tokens}")
 
-    if tokens[0][1] in ["int_enc", "int"]:
-            if len(tokens) < 3 or tokens[2][1] == "=":
-                # variable declaration or initialization
+    if tokens[0][1] in ["int_enc"]:
+            if len(tokens) < 3:
+                # variable declaration
                 pass
+            elif tokens[2][1] == "=":
+                # variable initialization
+                return merge_tokens([tokens[0], ("punct", " ", -1), tokens[1], ("punct", " = ", -1), function_parse(tokens[3:], scope)])[1]
             elif tokens[2][1] == "[":
                 # array declaration or initialization
                 pass
@@ -305,17 +356,19 @@ def rewrite_line(tokens: List[Token], scope: int) -> str:
                     print(f"Parsed: {parsed}")
                     return parsed[1]
                 elif type == "int_enc":
+                    # int_enc assignments
                     if tokens[1][1] == "=":
-                        # int_enc assignment
                         return f"{tokens[0][1]} = {function_parse(tokens[2:], scope)[1]}"
                     elif tokens[1][1] == "++":
                         return f"{tokens[0][1]} = addi_enc({tokens[0][1]}, 1)"
                     elif tokens[1][1] == "--":
                         return f"{tokens[0][1]} = subi_enc({tokens[0][1]}, 1)"
                     elif tokens[1][1] == "+" and tokens[2][1] == "=":
-                        return function_parse([tokens[0], ("punct", "+", -1), ("punct", "(", -1)] + tokens[3:] + [("punct", ")", -1)], scope)[1]
+                        return merge_tokens([tokens[0], ("punct", " = ", -1), function_parse([tokens[0], ("punct", "+", -1), ("punct", "(", -1)] + tokens[3:] + [("punct", ")", -1)], scope)])[1]
                     elif tokens[1][1] == "-" and tokens[2][1] == "=":
-                        return function_parse([tokens[0], ("punct", "-", -1), ("punct", "(", -1)] + tokens[3:] + [("punct", ")", -1)], scope)[1]
+                        return merge_tokens([tokens[0], ("punct", " = ", -1), function_parse([tokens[0], ("punct", "-", -1), ("punct", "(", -1)] + tokens[3:] + [("punct", ")", -1)], scope)])[1]
+    elif tokens[0][1] == "return":
+        return merge_tokens([("ident", "return", -1), ("punct", " ", -1), function_parse(tokens[1:], scope)])[1]
 
     return " ".join([token[1] for token in tokens])
 
@@ -384,7 +437,7 @@ def function_parse(tokens: List[Token], scope: int) -> Token:
 
             return replace_args(function_call, new_args)
 
-    return convert_expression(tokens)
+    return convert_expression(tokens, scope)
 
 
 def extract_function_call(tokens: List[Token]) -> List[Token]:
