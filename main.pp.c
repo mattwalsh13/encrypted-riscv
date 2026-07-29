@@ -1,13 +1,13 @@
 #include "encrypted_types.h"
 
-// int_enc globalCount = 0;
+int_enc globalCount = {0};
 
 int main() {
-    int_enc list [ 5 ] = { 1 , 2 , 3 , 4 , 5 };
-    int_enc x = 0xD;
-    int_enc y = 0x7;
+    int_enc list [5] = {{1}, {2}, {3}, {4}, {5}};
+    int_enc x = {0xD};
+    int_enc y = {0x7};
     int_enc result;
-    int_enc z , w;
+    int_enc z, w;
 
     result = and_enc(x, y);
     result = add_enc(x, y);
@@ -15,7 +15,7 @@ int main() {
     result = addi_enc(x, 13);
     result = iadd_enc(13, x);
 
-    // int_enc a = x + y, b = y - x;
+    int_enc a = add_enc(x, y), b = sub_enc(y, x);
 
     x = add_enc(x, y);
     x = sub_enc(x, y);
@@ -28,7 +28,7 @@ int main() {
     int i = 0;
 
     while (i < 10) {
-        int_enc x = 13;
+        int_enc x = {13};
         i ++;
     }
 
@@ -36,7 +36,7 @@ int main() {
 
     result = addDouble(x,y,x);
 
-    int_enc z = 0x0;
+    int_enc z = {0x0};
 
     addDouble(x,y,z);
 

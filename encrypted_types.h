@@ -118,6 +118,19 @@ typedef struct { unsigned int v; } int_enc;
     DO_NOT_OPTIMIZE(__addi_enc_r); \
     (int_enc){ __addi_enc_r }; \
 })
+
+// pseudo
+#define iadd_enc(imm, rs1) ({ \
+    _Static_assert(__builtin_types_compatible_p(__typeof__(rs1), int_enc), \
+        "Error: Source register argument must be an int_enc!"); \
+    _Static_assert(__builtin_constant_p(imm), \
+        "Error: Immediate argument must be a compile-time constant literal!"); \
+    _Static_assert((imm) >= -2048 && (imm) <= 2047, \
+        "Error: RISC-V I-type immediates must fit within a signed 12-bit range!"); \
+    unsigned int __iadd_enc_r = __builtin_riscv_addi_enc((rs1).v, (imm)); \
+    DO_NOT_OPTIMIZE(__iadd_enc_r); \
+    (int_enc){ __iadd_enc_r }; \
+})
  
 #define slti_enc(rs1, imm) ({ \
     _Static_assert(__builtin_types_compatible_p(__typeof__(rs1), int_enc), \
@@ -153,6 +166,19 @@ typedef struct { unsigned int v; } int_enc;
     unsigned int __xori_enc_r = __builtin_riscv_xori_enc((rs1).v, (imm)); \
     DO_NOT_OPTIMIZE(__xori_enc_r); \
     (int_enc){ __xori_enc_r }; \
+})
+
+// pseudo
+#define ixor_enc(imm, rs1) ({ \
+    _Static_assert(__builtin_types_compatible_p(__typeof__(rs1), int_enc), \
+        "Error: Source register argument must be an int_enc!"); \
+    _Static_assert(__builtin_constant_p(imm), \
+        "Error: Immediate argument must be a compile-time constant literal!"); \
+    _Static_assert((imm) >= -2048 && (imm) <= 2047, \
+        "Error: RISC-V I-type immediates must fit within a signed 12-bit range!"); \
+    unsigned int __ixor_enc_r = __builtin_riscv_xori_enc((rs1).v, (imm)); \
+    DO_NOT_OPTIMIZE(__ixor_enc_r); \
+    (int_enc){ __ixor_enc_r }; \
 })
  
 #define ori_enc(rs1, imm) ({ \

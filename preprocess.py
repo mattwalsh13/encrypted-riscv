@@ -187,6 +187,23 @@ OP_LOOKUP = {
     ">": "sgt"
 }
 
+C_VARIABLE_KEYWORDS = [
+    # Basic Data Types
+    "char", "int", "float", "double", "void", "_Bool", "_Complex", "_Imaginary", "int_enc",
+    
+    # Type Modifiers
+    "signed", "unsigned", "short", "long",
+    
+    # Type Qualifiers
+    "const", "volatile", "restrict",
+    
+    # Storage Class Specifiers
+    "auto", "register", "static", "extern", "typedef", "_Thread_local",
+    
+    # User-Defined Type Structuring
+    "struct", "union", "enum"
+]
+
 
 def convert_expression(tokens: List[Token], scope: int) -> Token:
     tokens_strs = [token[1] for token in tokens]
@@ -326,19 +343,93 @@ def rewrite_line(tokens: List[Token], scope: int) -> str:
     print("="*100)
     print(f"Rewriting at scope {scope}: {tokens}")
 
+    open_curl = ("punct", "{", -1)
+    close_curl = ("punct", "}", -1)
+
     if tokens[0][1] in ["int_enc"]:
             if len(tokens) < 3:
-                # variable declaration
-                pass
+                # single declaration
+                return f"{tokens[0][1]} {tokens[1][1]}"
             elif tokens[2][1] == "=":
-                # variable initialization
-                return merge_tokens([tokens[0], ("punct", " ", -1), tokens[1], ("punct", " = ", -1), function_parse(tokens[3:], scope)])[1]
+                # variable initialization(s)
+                comma_indices: List[int] = [0] # 0 is an artificial comma for the first initialization
+                depth = 0
+                conv_str = tokens[0][1] + " "
+                for i, token in enumerate(tokens):
+                    if token[1] == ")":
+                        depth -= 1
+                    elif token[1] == "(":
+                        depth += 1
+                    elif token[1] == ",":
+                        if depth == 0:
+                            comma_indices.append(i)
+
+                print(f"Commas at {comma_indices}")
+
+                for i, comma_i in enumerate(comma_indices):
+                    if i != 0:
+                        conv_str += ", "
+
+                    if i == len(comma_indices) - 1:
+                        end = len(tokens)
+                    else:
+                        end = comma_indices[i + 1]
+
+                    print(f"Tokens to parse: {tokens[comma_i + 3:end]}")
+
+                    value = function_parse(tokens[comma_i + 3:end], scope)
+                    if value[0] == "literal":
+                        # curly brackets needed
+                        conv_str += merge_tokens([tokens[comma_i + 1], ("punct", " = ", -1), open_curl, value, close_curl])[1]
+                    else:
+                        conv_str += merge_tokens([tokens[comma_i + 1], ("punct", " = ", -1), value])[1]
+
+                return conv_str
             elif tokens[2][1] == "[":
-                # array declaration or initialization
-                pass
-            elif tokens[2][1] == "(":
-                # function declaration
-                pass
+                if len(tokens) > 5:
+                    # array initialization
+                    values: List[Token] = []
+                    comma_indices = [index for index, token in enumerate(tokens[7:]) if token[1] == ',']
+                    # artificial comma at the end
+                    comma_indices.append(next((i for i, token in enumerate(tokens[7:]) if token[1] == "}"), -1))
+                    print(f"Commas at: {comma_indices}")
+
+                    for i, index in enumerate(comma_indices):
+                        if i == 0:
+                            start = 7
+                        else:
+                            start = comma_indices[i - 1] + 8
+
+                        value = function_parse(tokens[start:index + 7], scope)
+
+                        if value[0] == "literal":
+                            # needs curls
+                            value = merge_tokens([open_curl, value, close_curl])
+
+                        values.append(value)
+
+                    print(f"Values: {values}")
+
+                    value_str = ""
+                    for value in values[:-1]:
+                        value_str += value[1] + ", "
+                    value_str += values[-1][1]
+
+                    return "int_enc " + tokens[1][1] + " [" + tokens[3][1] + "] = {" + value_str + "}"
+                else:
+                    # array declaration
+                    pass
+            elif not tokens[3][1] in C_VARIABLE_KEYWORDS:
+                # multiple var declarations
+                conv_str = tokens[0][1] + " "
+
+                for i, token in enumerate(tokens[1::2]):
+                    conv_str += token[1]
+                    print(i)
+                    if not i == (len(tokens) - 1) // 2:
+                        conv_str += ", "
+
+                return conv_str
     elif tokens[0][1] in [ident[1] for ident in identifiers]:
             # assignment, function call, or useless line
             if len(tokens) == 1:

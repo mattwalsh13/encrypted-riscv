@@ -1,6 +1,6 @@
 #include "encrypted_types.h"
 
-// int_enc globalCount = 0;
+int_enc globalCount = 0;
 
 int main() {
     int_enc list[5] = {1, 2, 3, 4, 5};
@@ -15,7 +15,7 @@ int main() {
     result = x + 13;
     result = 13 + x;
 
-    // int_enc a = x + y, b = y - x;
+    int_enc a = x + y, b = y - x;
 
     x += y;
     x -= y;
