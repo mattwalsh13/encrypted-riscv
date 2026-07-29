@@ -1,5 +1,3 @@
-#include "encrypted_types.h"
-
 int_enc globalCount = 0;
 
 int main() {

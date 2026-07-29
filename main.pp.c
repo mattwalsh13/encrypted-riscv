@@ -1,4 +1,6 @@
 #include "encrypted_types.h"
+#define TEMP_ZERO_REGISTER_HELPER = { 0X0 }
+#define ZERO_REGISTER xor_enc(TEMP_ZERO_REGISTER_HELPER, TEMP_ZERO_REGISTER_HELPER)
 
 int_enc globalCount = {0};
 

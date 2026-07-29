@@ -683,8 +683,11 @@ def main(pre_file: str, processed_file: str) -> None:
 
     out_parts.append(src[cursor:])
 
+    CONSTANTS = "#include \"encrypted_types.h\"\n#define TEMP_ZERO_REGISTER_HELPER = { 0X0 }\n#define ZERO_REGISTER xor_enc(TEMP_ZERO_REGISTER_HELPER, TEMP_ZERO_REGISTER_HELPER)\n\n"
+    final_src = CONSTANTS + "".join(out_parts)
+
     with open(processed_file, "w") as f:
-        f.write("".join(out_parts))
+        f.write(final_src)
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
