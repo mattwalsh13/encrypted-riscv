@@ -1,6 +1,7 @@
 import sys
 import re
 from typing import List, Tuple, Iterator, Dict, Optional
+from colorama import Fore, Back, Style, init
 
 
 # A Token is (kind: str, text: str, pos: int)
@@ -182,7 +183,7 @@ OP_LOOKUP = {
     "|": "or",
     "&": "and",
     "<<": "sll",
-    ">>": "srr",
+    ">>": "srl",
     "-": "sub",
     ">": "sgt"
 }
@@ -208,7 +209,7 @@ C_VARIABLE_KEYWORDS = [
 def convert_expression(tokens: List[Token], scope: int) -> Token:
     tokens_strs = [token[1] for token in tokens]
 
-    print(f"Converting {" ".join(tokens_strs)}")
+    print(Fore.BLUE + "Converting expression: " + Fore.WHITE + f"{" ".join(tokens_strs)}")
 
     opStack: List[Token] = []
     postfix: List[Token] = []
@@ -230,7 +231,7 @@ def convert_expression(tokens: List[Token], scope: int) -> Token:
     while opStack:
         postfix.append(opStack.pop(0))
 
-    print(f"Postfix: {merge_tokens(postfix)}")
+    print(Fore.CYAN + f"Postfix: " + Fore.WHITE + f"{merge_tokens(postfix)}")
 
     # Convert postfix token list into function calls
     operands: List[Token] = []
@@ -239,10 +240,6 @@ def convert_expression(tokens: List[Token], scope: int) -> Token:
     close_paren = ("punct", ")", -1)
 
     simp_expr = ()
-
-    print("="*100)
-    print("Converting to enc instructions")
-    print("="*100)
 
     for token in postfix:
         print(operands)
@@ -278,7 +275,7 @@ def convert_expression(tokens: List[Token], scope: int) -> Token:
             else:
                 operands.append(token)
 
-    print(f"Finished conversion {operands}")
+    print(Fore.GREEN + f"Postfix with enc calls: " + Fore.WHITE + f"{operands}")
 
     return operands.pop()
 
@@ -314,8 +311,7 @@ identifiers: List[Tuple[str, str, int]] = []
 
 
 def log_identifiers(tokens: List[Token], scope: int, scope_at: List[int]) -> None:
-    print("="*100)
-    print(f"Logging at scope {scope}: {tokens}")
+    print(Fore.BLUE + f"Logging at scope " + Fore.LIGHTBLUE_EX + f"{scope}: " + Fore.WHITE + f"{tokens}")
 
     if tokens[0][1] in ["int_enc", "int"]:
         if len(tokens) < 3 or tokens[2][1] == "=":
@@ -340,8 +336,7 @@ def log_identifiers(tokens: List[Token], scope: int, scope_at: List[int]) -> Non
 
 
 def rewrite_line(tokens: List[Token], scope: int) -> str:
-    print("="*100)
-    print(f"Rewriting at scope {scope}: {tokens}")
+    print(Fore.BLUE + f"Rewriting at scope " + Fore.LIGHTBLUE_EX + f"{scope}: " + Fore.WHITE + f"{tokens}")
 
     open_curl = ("punct", "{", -1)
     close_curl = ("punct", "}", -1)
@@ -364,8 +359,6 @@ def rewrite_line(tokens: List[Token], scope: int) -> str:
                         if depth == 0:
                             comma_indices.append(i)
 
-                print(f"Commas at {comma_indices}")
-
                 for i, comma_i in enumerate(comma_indices):
                     if i != 0:
                         conv_str += ", "
@@ -374,8 +367,6 @@ def rewrite_line(tokens: List[Token], scope: int) -> str:
                         end = len(tokens)
                     else:
                         end = comma_indices[i + 1]
-
-                    print(f"Tokens to parse: {tokens[comma_i + 3:end]}")
 
                     value = function_parse(tokens[comma_i + 3:end], scope)
                     if value[0] == "literal":
@@ -392,7 +383,6 @@ def rewrite_line(tokens: List[Token], scope: int) -> str:
                     comma_indices = [index for index, token in enumerate(tokens[7:]) if token[1] == ',']
                     # artificial comma at the end
                     comma_indices.append(next((i for i, token in enumerate(tokens[7:]) if token[1] == "}"), -1))
-                    print(f"Commas at: {comma_indices}")
 
                     for i, index in enumerate(comma_indices):
                         if i == 0:
@@ -407,8 +397,6 @@ def rewrite_line(tokens: List[Token], scope: int) -> str:
                             value = merge_tokens([open_curl, value, close_curl])
 
                         values.append(value)
-
-                    print(f"Values: {values}")
 
                     value_str = ""
                     for value in values[:-1]:
@@ -425,7 +413,6 @@ def rewrite_line(tokens: List[Token], scope: int) -> str:
 
                 for i, token in enumerate(tokens[1::2]):
                     conv_str += token[1]
-                    print(i)
                     if not i == (len(tokens) - 1) // 2:
                         conv_str += ", "
 
@@ -439,17 +426,23 @@ def rewrite_line(tokens: List[Token], scope: int) -> str:
                 type = lookup_identifier(tokens[0][1], scope)
 
                 if type == None:
-                    print("Syntax error: variable name not recognized in this scope")
+                    print(Fore.RED + "Syntax error: variable name not recognized in this scope")
                 elif type.startswith("funct_"):
                     # function call
-                    print(f"Parsing function: {tokens}")
+                    print("Function call")
                     parsed = function_parse(tokens, scope)
-                    print(f"Parsed: {parsed}")
                     return parsed[1]
                 elif type == "int_enc":
                     # int_enc assignments
+                    print("int_enc assignment")
                     if tokens[1][1] == "=":
-                        return f"{tokens[0][1]} = {function_parse(tokens[2:], scope)[1]}"
+                        value = function_parse(tokens[2:], scope)
+                        print(Fore.GREEN + f"Converted expression: " + Fore.WHITE + f"{value}")
+                        if value[0] == "literal":
+                            # curly brackets needed
+                            return merge_tokens([tokens[0], ("punct", " = ", -1), open_curl, value, close_curl])[1]
+                        else:
+                            return merge_tokens([tokens[0], ("punct", " = ", -1), value])[1]
                     elif tokens[1][1] == "++":
                         return f"{tokens[0][1]} = addi_enc({tokens[0][1]}, 1)"
                     elif tokens[1][1] == "--":
@@ -512,12 +505,11 @@ def function_parse(tokens: List[Token], scope: int) -> Token:
     """
     Takes in a function call in the form of tokens. Breaks down into the arguments, and converts said arguments (handle nested calls)
     """
-    print(f"Parsing: {tokens}")
 
     for i, token in enumerate(tokens[0:len(tokens) - 1]):
         type = lookup_identifier(token[1], scope)
         if type == None:
-            print("Identifier not found")
+            print(Fore.RED + "Identifier not found")
         elif type.startswith("funct_"):
             function_call = extract_function_call(tokens[i:len(tokens)])
             args: List[List[Token]] = get_arguments(function_call)
@@ -535,14 +527,12 @@ def extract_function_call(tokens: List[Token]) -> List[Token]:
     """
     Returns tokens contained by the function call at the start of the list.
     """
-    print(f"Extracting from: {tokens}")
 
     depth = 0 # Tracks if the parenthesis the parser hits is at the right depth and signals the end of the function call
 
     for i, token in enumerate(tokens):
         if token[1] == ")":
             if depth == 1:
-                print(f"Extracted: {tokens[0:i + 1]}")
                 return tokens[0:i + 1]
             else:
                 depth -= 1
@@ -556,8 +546,6 @@ def get_arguments(tokens: List[Token]) -> List[List[Token]]:
     """
     Helper function for function_parse. Takes the function call tokens and returns a list of lists of tokens. Each element in the first corresponds to an argument. The inner list is the contents of that specific argument.
     """
-
-    print(f"Getting arguments: {tokens}")
 
     depth = 0 # Tracks if the parenthesis the parser hits is at the right depth and signals the end of the function call
 
@@ -578,7 +566,6 @@ def get_arguments(tokens: List[Token]) -> List[List[Token]]:
 
     args.append(curr_arg) # Add the last argument
 
-    print(f"Arguments found: {args}")
     return args
 
 
@@ -586,8 +573,6 @@ def replace_args(function_call: List[Token], new_args: List[Token]) -> Token:
     """
     Parses the function call and replaces each argument with the simplified version, returns a merged token.
     """
-
-    print(f"Replacing args: {function_call} with {new_args}")
 
     new_args_with_commas: List[Token] = []
 
@@ -603,7 +588,6 @@ def replace_args(function_call: List[Token], new_args: List[Token]) -> Token:
     function_call_with_new_args.append(function_call[len(function_call) - 1])
 
     merged_function = merge_tokens(function_call_with_new_args)
-    print(f"Merged: {merged_function}")
     return merged_function
 
 
@@ -612,7 +596,6 @@ def merge_tokens(tokens: List[Token]) -> Token:
     Merges the given list of tokens together, in the order they are given. The returned token will have the return type and cursor of the first token.
     """
 
-    print(f"Merging: {tokens}")
     token_str = ""
 
     for token in tokens:
@@ -622,6 +605,9 @@ def merge_tokens(tokens: List[Token]) -> Token:
 
 
 def main(pre_file: str, processed_file: str) -> None:
+    # Initialize colorama (autoreset=True resets colors automatically after each print)
+    init(strip=False, convert=False, autoreset=True)
+
     src: str = open(pre_file).read()
     tokens: List[Token] = tokenize(src)
     scope_at: List[int] = compute_scopes(tokens)
@@ -675,7 +661,6 @@ def main(pre_file: str, processed_file: str) -> None:
             # copy everything up to the '(' contents verbatim (return type,
             # function name, keyword like "if"/"while", and the '(' itself)
             out_parts.append(src[cursor:inner_start_pos])
-            print(f"scope: {scope}")
             out_parts.append(rewrite_line(inner_tokens, scope))
             cursor = inner_end_pos
             # the closing ')' and anything after (up to '{') gets copied

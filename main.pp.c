@@ -4,12 +4,17 @@
 
 int_enc globalCount = {0};
 
+int_enc addDouble(int_enc a , int_enc b , int_enc useless) {
+    int_enc c = add_enc(a, b);
+    return add_enc(c, b);
+}
+
 int main() {
     int_enc list [5] = {{1}, {2}, {3}, {4}, {5}};
     int_enc x = {0xD};
     int_enc y = {0x7};
     int_enc result;
-    int_enc z, w;
+    // int_enc z, w;
 
     result = and_enc(x, y);
     result = add_enc(x, y);
@@ -23,7 +28,7 @@ int main() {
     x = sub_enc(x, y);
 
     x = addi_enc(x, 1);
-    x = subi_enc(x, 1);
+    // x--;
 
     x;
 
@@ -38,14 +43,9 @@ int main() {
 
     result = addDouble(x,y,x);
 
-    int_enc z = {0x0};
+    // z = 0x0;
 
-    addDouble(x,y,z);
+    addDouble(x,y,y);
 
     return 0;
-}
-
-int_enc addDouble(int_enc a , int_enc b , int_enc useless) {
-    int_enc c = add_enc(a, b);
-    return add_enc(c, b);
 }
