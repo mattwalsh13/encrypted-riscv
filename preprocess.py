@@ -1,7 +1,6 @@
 import sys
 import re
 from typing import List, Tuple, Iterator, Dict, Optional
-from colorama import Fore, Back, Style, init
 
 
 # A Token is (kind: str, text: str, pos: int)
@@ -209,7 +208,7 @@ C_VARIABLE_KEYWORDS = [
 def convert_expression(tokens: List[Token], scope: int) -> Token:
     tokens_strs = [token[1] for token in tokens]
 
-    print(Fore.BLUE + "Converting expression: " + Fore.WHITE + f"{" ".join(tokens_strs)}")
+    print(f"\tConverting expression: \t{" ".join(tokens_strs)}")
 
     opStack: List[Token] = []
     postfix: List[Token] = []
@@ -231,7 +230,7 @@ def convert_expression(tokens: List[Token], scope: int) -> Token:
     while opStack:
         postfix.append(opStack.pop(0))
 
-    print(Fore.CYAN + f"Postfix: " + Fore.WHITE + f"{merge_tokens(postfix)}")
+    print(f"\t\tPostfix: \t{merge_tokens(postfix)[1]}")
 
     # Convert postfix token list into function calls
     operands: List[Token] = []
@@ -242,15 +241,14 @@ def convert_expression(tokens: List[Token], scope: int) -> Token:
     simp_expr = ()
 
     for token in postfix:
-        print(operands)
-
         if token[1] in OP_LOOKUP:
             op = OP_LOOKUP[token[1]]
             oper_1_type = operands[0][0]
             oper_2_type = operands[1][0]
 
-            print(oper_1_type)
-            print(oper_2_type)
+            if oper_1_type == None or oper_2_type == None: # pyright: ignore[reportUnnecessaryComparison]
+                print("\t\t\tError: Identifier type not found.")
+                return ("error", "// ERROR: VARIABLE TYPE NOT FOUND", -1)
 
             if oper_1_type == "literal" and oper_2_type  == "literal":
                 simp_expr = merge_tokens([open_paren, operands.pop(-2), token, operands.pop(), close_paren])
@@ -275,7 +273,7 @@ def convert_expression(tokens: List[Token], scope: int) -> Token:
             else:
                 operands.append(token)
 
-    print(Fore.GREEN + f"Postfix with enc calls: " + Fore.WHITE + f"{operands}")
+    print(f"\tConverted expression: \t{operands[0][1]}")
 
     return operands.pop()
 
@@ -310,33 +308,43 @@ next_scope_id = 1
 identifiers: List[Tuple[str, str, int]] = []
 
 
-def log_identifiers(tokens: List[Token], scope: int, scope_at: List[int]) -> None:
-    print(Fore.BLUE + f"Logging at scope " + Fore.LIGHTBLUE_EX + f"{scope}: " + Fore.WHITE + f"{tokens}")
+def log_identifiers(tokens: List[Token], scope: int, funct_scope: int) -> None:
+    print(f"\nLogging at scope {scope}: {" ".join([token[1] for token in tokens])}")
 
     if tokens[0][1] in ["int_enc", "int"]:
-        if len(tokens) < 3 or tokens[2][1] == "=":
-            # variable declaration or initialization
+        if not len(tokens) < 3 and tokens[2][1] == "=":
+            # variable initialization
             identifiers.append((tokens[0][1], tokens[1][1], scope))
-        elif tokens[2][1] == "[":
+        elif not len(tokens) < 3 and tokens[2][1] == "[":
             # array declaration or initialization
             identifiers.append((tokens[0][1], tokens[1][1], scope))
-        elif tokens[2][1] == "(":
+        elif not len(tokens) < 3 and tokens[2][1] == "(":
             # function declaration
             identifiers.append((f"funct_{tokens[0][1]}", tokens[1][1], scope))
             # add arguments to the function scope
-            scope_inside_funct = scope_at[next((i for i, (_, name, _) in enumerate(tokens) if name == "{"), -1)]
+            print(f"\tScope inside detected function: {funct_scope}")
             idx_close_paren = next((i for i, (_, name, _) in enumerate(tokens) if name == ")"), -1)
 
             for i, token in enumerate(tokens[3:idx_close_paren:3]):
-                identifiers.append((token[1], tokens[(i * 3) + 1 + 3][1], scope_inside_funct))
+                identifiers.append((token[1], tokens[(i * 3) + 1 + 3][1], funct_scope))
 
-            # to add: nested function compatibility ?
+            # TODO: nested function compatibility ?
+        else:
+            # variable declaration
+            comma_indeces: List[int] = [0] # artificial, allows parser to include first
+
+            for i, token in enumerate(tokens):
+                if token[1] == ",":
+                    comma_indeces.append(i)
+
+            for comma_i in comma_indeces:
+                identifiers.append((tokens[0][1], tokens[comma_i + 1][1], scope))
 
     return
 
 
 def rewrite_line(tokens: List[Token], scope: int) -> str:
-    print(Fore.BLUE + f"Rewriting at scope " + Fore.LIGHTBLUE_EX + f"{scope}: " + Fore.WHITE + f"{tokens}")
+    print(f"\nRewriting at scope {scope}: \t{" ".join([token[1] for token in tokens])}")
 
     open_curl = ("punct", "{", -1)
     close_curl = ("punct", "}", -1)
@@ -396,6 +404,9 @@ def rewrite_line(tokens: List[Token], scope: int) -> str:
                             # needs curls
                             value = merge_tokens([open_curl, value, close_curl])
 
+                        if i != len(comma_indices) - 1:
+                            print()
+
                         values.append(value)
 
                     value_str = ""
@@ -426,21 +437,18 @@ def rewrite_line(tokens: List[Token], scope: int) -> str:
                 type = lookup_identifier(tokens[0][1], scope)
 
                 if type == None:
-                    print(Fore.RED + "Syntax error: variable name not recognized in this scope")
+                    print("Syntax error: variable name not recognized in this scope")
                 elif type.startswith("funct_"):
                     # function call
-                    print("Function call")
                     parsed = function_parse(tokens, scope)
                     return parsed[1]
                 elif type == "int_enc":
                     # int_enc assignments
-                    print("int_enc assignment")
                     if tokens[1][1] == "=":
                         value = function_parse(tokens[2:], scope)
-                        print(Fore.GREEN + f"Converted expression: " + Fore.WHITE + f"{value}")
                         if value[0] == "literal":
-                            # curly brackets needed
-                            return merge_tokens([tokens[0], ("punct", " = ", -1), open_curl, value, close_curl])[1]
+                            # curly brackets and cast needed
+                            return merge_tokens([tokens[0], ("punct", " = ", -1), ("helper", "(int_enc)", -1), open_curl, value, close_curl])[1]
                         else:
                             return merge_tokens([tokens[0], ("punct", " = ", -1), value])[1]
                     elif tokens[1][1] == "++":
@@ -508,9 +516,7 @@ def function_parse(tokens: List[Token], scope: int) -> Token:
 
     for i, token in enumerate(tokens[0:len(tokens) - 1]):
         type = lookup_identifier(token[1], scope)
-        if type == None:
-            print(Fore.RED + "Identifier not found")
-        elif type.startswith("funct_"):
+        if not type == None and type.startswith("funct_"):
             function_call = extract_function_call(tokens[i:len(tokens)])
             args: List[List[Token]] = get_arguments(function_call)
             new_args: List[Token] = []
@@ -605,24 +611,53 @@ def merge_tokens(tokens: List[Token]) -> Token:
 
 
 def main(pre_file: str, processed_file: str) -> None:
-    # Initialize colorama (autoreset=True resets colors automatically after each print)
-    init(strip=False, convert=False, autoreset=True)
 
     src: str = open(pre_file).read()
     tokens: List[Token] = tokenize(src)
     scope_at: List[int] = compute_scopes(tokens)
     spans = list(find_statement_spans(tokens))
 
+    print("="*100)
+    print("-"*100)
+    print("\tLogging identifier types...")
+    print("-"*100)
+
     # Pass 1: log every span
     for start_idx, end_idx, _ in spans:
         stmt_tokens = tokens[start_idx:end_idx]
         if not stmt_tokens:
             continue
-        scope = scope_at[start_idx]
-        log_identifiers(stmt_tokens, scope, scope_at)
+        log_identifiers(stmt_tokens, scope_at[start_idx], scope_at[end_idx])
 
+    print("-"*100)
+
+    print("Variables:")
+    print()
+    print("int:")
+    for ident in identifiers:
+        if ident[0] == "int":
+            print(f"\t{ident[1]}")
+    print("int_enc:")
+    for ident in identifiers:
+            if ident[0] == "int_enc":
+                print(f"\t{ident[1]}")
+    print()
+    print("Functions by return type:")
+    print()
+    print("int:")
+    for ident in identifiers:
+        if ident[0] == "funct_int":
+            print(f"\t{ident[1]}")
+    print("funct_int_enc:")
+    for ident in identifiers:
+            if ident[0] == "funct_int_enc":
+                print(f"\t{ident[1]}")
+
+    print("-"*100)
     print("="*100)
-    print(identifiers)
+    print("-"*100)
+    print("\tRewriting lines...")
+    print("-"*100)
 
     # Pass 2: rewrite
     out_parts: List[str] = []
@@ -668,11 +703,23 @@ def main(pre_file: str, processed_file: str) -> None:
 
     out_parts.append(src[cursor:])
 
+    print("-"*100)
+    print("="*100)
+    print("-"*100)
+    print("\tWriting to file...")
+
     CONSTANTS = "#include \"encrypted_types.h\"\n#define TEMP_ZERO_REGISTER_HELPER = { 0X0 }\n#define ZERO_REGISTER xor_enc(TEMP_ZERO_REGISTER_HELPER, TEMP_ZERO_REGISTER_HELPER)\n\n"
     final_src = CONSTANTS + "".join(out_parts)
 
     with open(processed_file, "w") as f:
         f.write(final_src)
+
+    print("-"*100)
+    print("="*100)
+    print("-"*100)
+    print("\tTranslation complete.")
+    print("-"*100)
+    print("="*100)
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:

@@ -14,7 +14,7 @@ int main() {
     int_enc x = {0xD};
     int_enc y = {0x7};
     int_enc result;
-    // int_enc z, w;
+    int_enc z, w;
 
     result = and_enc(x, y);
     result = add_enc(x, y);
@@ -43,7 +43,7 @@ int main() {
 
     result = addDouble(x,y,x);
 
-    // z = 0x0;
+    z = (int_enc){0x0};
 
     addDouble(x,y,y);
 

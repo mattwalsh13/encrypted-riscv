@@ -10,7 +10,7 @@ int main() {
     int_enc x = 0xD;
     int_enc y = 0x7;
     int_enc result;
-    // int_enc z, w;
+    int_enc z, w;
 
     result = x & y;
     result = x + y;
@@ -39,7 +39,7 @@ int main() {
 
     result = addDouble(x, y, x);
 
-    // z = 0x0;
+    z = 0x0;
 
     addDouble(x, y, y);
 
