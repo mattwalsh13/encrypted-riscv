@@ -15,6 +15,10 @@ int main() {
     int_enc y = {0x7};
     int_enc result;
     int_enc z, w;
+    uint_enc no_neg = {3}, test = {2};
+
+    result = // ERROR: VARIABLE TYPE NOT FOUND;
+    result = // ERROR: VARIABLE TYPE NOT FOUND;
 
     result = and_enc(x, y);
     result = add_enc(x, y);

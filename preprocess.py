@@ -210,6 +210,18 @@ def convert_expression(tokens: List[Token], scope: int) -> Token:
 
     print(f"\tConverting expression: \t{" ".join(tokens_strs)}")
 
+    int_present = False
+    int_enc_present = False
+
+    for token in tokens:
+        if token[0] == "int":
+            int_present = True
+        elif token[0] in ["int_enc", "uint_enc"]:
+            int_present = True
+
+    if int_present and int_enc_present:
+        print("\tWARNING: Mixing int and int_enc types in this expression")
+
     opStack: List[Token] = []
     postfix: List[Token] = []
 
@@ -311,7 +323,7 @@ identifiers: List[Tuple[str, str, int]] = []
 def log_identifiers(tokens: List[Token], scope: int, funct_scope: int) -> None:
     print(f"\nLogging at scope {scope}: {" ".join([token[1] for token in tokens])}")
 
-    if tokens[0][1] in ["int_enc", "int"]:
+    if tokens[0][1] in ["int_enc", "uint_enc", "int"]:
         if not len(tokens) < 3 and tokens[2][1] == "=":
             # variable initialization
             identifiers.append((tokens[0][1], tokens[1][1], scope))
@@ -349,7 +361,7 @@ def rewrite_line(tokens: List[Token], scope: int) -> str:
     open_curl = ("punct", "{", -1)
     close_curl = ("punct", "}", -1)
 
-    if tokens[0][1] in ["int_enc"]:
+    if tokens[0][1] in ["int_enc", "uint_enc"]:
             if len(tokens) < 3:
                 # single declaration
                 return f"{tokens[0][1]} {tokens[1][1]}"

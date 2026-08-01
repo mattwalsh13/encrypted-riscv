@@ -2,6 +2,7 @@
 #define ENCRYPTED_TYPES_H
 
 typedef struct { unsigned int v; } int_enc;
+typedef struct { unsigned int v; } uint_enc;
 
 #define DO_NOT_OPTIMIZE(x) __asm__ volatile("" : : "r"(x) : "memory")
 
@@ -47,13 +48,13 @@ typedef struct { unsigned int v; } int_enc;
 })
  
 #define sltu_enc(arg1, arg2) ({ \
-    _Static_assert(__builtin_types_compatible_p(__typeof__(arg1), int_enc), \
+    _Static_assert(__builtin_types_compatible_p(__typeof__(arg1), uint_enc), \
         "Error: First argument to sltu_enc must be a int_enc!"); \
-    _Static_assert(__builtin_types_compatible_p(__typeof__(arg2), int_enc), \
+    _Static_assert(__builtin_types_compatible_p(__typeof__(arg2), uint_enc), \
         "Error: Second argument to sltu_enc must be a int_enc!"); \
     unsigned int __sltu_enc_r = __builtin_riscv_sltu_enc((arg1).v, (arg2).v); \
     DO_NOT_OPTIMIZE(__sltu_enc_r); \
-    (int_enc){ __sltu_enc_r }; \
+    (uint_enc){ __sltu_enc_r }; \
 })
  
 #define xor_enc(arg1, arg2) ({ \
@@ -145,7 +146,7 @@ typedef struct { unsigned int v; } int_enc;
 })
  
 #define sltiu_enc(rs1, imm) ({ \
-    _Static_assert(__builtin_types_compatible_p(__typeof__(rs1), int_enc), \
+    _Static_assert(__builtin_types_compatible_p(__typeof__(rs1), uint_enc), \
         "Error: Source register argument must be an int_enc!"); \
     _Static_assert(__builtin_constant_p(imm), \
         "Error: Immediate argument must be a compile-time constant literal!"); \
@@ -153,7 +154,7 @@ typedef struct { unsigned int v; } int_enc;
         "Error: RISC-V I-type immediates must fit within a signed 12-bit range!"); \
     unsigned int __sltiu_enc_r = __builtin_riscv_sltiu_enc((rs1).v, (imm)); \
     DO_NOT_OPTIMIZE(__sltiu_enc_r); \
-    (int_enc){ __sltiu_enc_r }; \
+    (uint_enc){ __sltiu_enc_r }; \
 })
  
 #define xori_enc(rs1, imm) ({ \

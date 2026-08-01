@@ -11,6 +11,10 @@ int main() {
     int_enc y = 0x7;
     int_enc result;
     int_enc z, w;
+    uint_enc no_neg = 3, test = 2;
+
+    result = no_neg < test;
+    result = test < no_neg;
 
     result = x & y;
     result = x + y;
