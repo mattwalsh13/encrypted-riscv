@@ -10,11 +10,15 @@ int main() {
     int_enc x = 0xD;
     int_enc y = 0x7;
     int_enc result;
+    uint_enc uresult;
     int_enc z, w;
-    uint_enc no_neg = 3, test = 2;
+    uint_enc no_neg = 3;
+    uint_enc test = 2;
+    const int_enc thirteen = 13;
 
-    result = no_neg < test;
-    result = test < no_neg;
+    uresult = no_neg < test;
+    uresult = test < no_neg;
+    // result = x > y;
 
     result = x & y;
     result = x + y;

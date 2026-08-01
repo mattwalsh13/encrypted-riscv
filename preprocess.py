@@ -139,10 +139,36 @@ def find_paren_contents(tokens: List[Token], start_idx: int, end_idx: int) -> Op
     return None
 
 
-CONTROL_KEYWORDS = {"if", "while", "for", "switch", "sizeof"}
-# In-Stack Precedence (ISP) Dictionary
+OP_LOOKUP = {
+    "+": "add",
+    "<": "slt",
+    "^": "xor",
+    "|": "or",
+    "&": "and",
+    "<<": "sll",
+    ">>": "srl",
+    "-": "sub",
+    ">": "sgt"
+}
+
+# Unary operators map to named functions instead of "<op>_enc(a, b)" shape,
+# since they only ever take one operand.
+UNARY_OP_LOOKUP = {
+    "u-": "negate",
+    "u!": "lnot",
+    "u~": "bnot",
+    "++": "iterate",
+    "--": "decrement",
+}
+
+ENCRYPTED_TYPES = {"int_enc", "uint_enc"}
+
+# Binary ISP/ICP unchanged from before, EXCEPT unary-capable tokens ("-", "!",
+# "~") now only represent their BINARY meaning here. Their unary meaning gets
+# a separate "u"-prefixed pseudo-token below, reusing the same right-assoc
+# precedence style your original ++/--/!/~ entries already used (ISP < ICP).
 ISP = { # type: ignore
-    ")": None,  # Never pushed to the stack
+    ")": None,
     "=": 1, "+=": 1, "-=": 1, "*=": 1, "/=": 1, "%=": 1,
     "||": 3,
     "&&": 4,
@@ -154,10 +180,9 @@ ISP = { # type: ignore
     "<<": 10, ">>": 10,
     "+": 11, "-": 11,
     "*": 12, "/": 12, "%": 12,
-    "++": 13, "--": 13, "!": 13, "~": 13,
+    "u-": 13, "u!": 13, "u~": 13, "++": 13, "--": 13,   # unary, right-assoc (ISP < ICP)
     "(": 0
 }
-# Incoming Precedence (ICP) Dictionary
 ICP = {
     ")": 0,
     "=": 2, "+=": 2, "-=": 2, "*=": 2, "/=": 2, "%=": 2,
@@ -171,38 +196,13 @@ ICP = {
     "<<": 10, ">>": 10,
     "+": 11, "-": 11,
     "*": 12, "/": 12, "%": 12,
-    "++": 14, "--": 14, "!": 14, "~": 14,
+    "u-": 14, "u!": 14, "u~": 14, "++": 14, "--": 14,   # right-assoc: ICP > ISP
     "(": 15
 }
 
-OP_LOOKUP = {
-    "+": "add",
-    "<": "slt",
-    "^": "xor",
-    "|": "or",
-    "&": "and",
-    "<<": "sll",
-    ">>": "srl",
-    "-": "sub",
-    ">": "sgt"
-}
-
-C_VARIABLE_KEYWORDS = [
-    # Basic Data Types
-    "char", "int", "float", "double", "void", "_Bool", "_Complex", "_Imaginary", "int_enc",
-    
-    # Type Modifiers
-    "signed", "unsigned", "short", "long",
-    
-    # Type Qualifiers
-    "const", "volatile", "restrict",
-    
-    # Storage Class Specifiers
-    "auto", "register", "static", "extern", "typedef", "_Thread_local",
-    
-    # User-Defined Type Structuring
-    "struct", "union", "enum"
-]
+# Tokens that can be unary depending on context, and the "u"-prefixed pseudo-
+# token they get rewritten to when they appear in unary position.
+UNARY_CANDIDATES = {"-": "u-", "!": "u!", "~": "u~"}
 
 
 def convert_expression(tokens: List[Token], scope: int) -> Token:
@@ -211,16 +211,33 @@ def convert_expression(tokens: List[Token], scope: int) -> Token:
     print(f"\tConverting expression: \t{" ".join(tokens_strs)}")
 
     int_present = False
-    int_enc_present = False
+    enc_present = False
 
     for token in tokens:
         if token[0] == "int":
             int_present = True
-        elif token[0] in ["int_enc", "uint_enc"]:
-            int_present = True
+        elif token[0] in ENCRYPTED_TYPES:
+            enc_present = True
 
-    if int_present and int_enc_present:
-        print("\tWARNING: Mixing int and int_enc types in this expression")
+    if int_present and enc_present:
+        print("\tWARNING: Mixing int and int_enc/uint_enc types in this expression")
+
+    # --- Disambiguate unary vs. binary '-', '!', '~' before the shunting-yard pass ---
+    # A '-'/'!'/'~' is unary if it's the first token, or the previous token was
+    # an operator/'(' /',' (i.e. we're at the START of an operand, not between two).
+    disambiguated: List[Token] = []
+    prev_text: Optional[str] = None
+    for token in tokens:
+        kind, text, pos = token
+        if kind == "punct" and text in UNARY_CANDIDATES:
+            is_unary = prev_text is None or prev_text in ISP or prev_text == ","
+            if is_unary:
+                disambiguated.append(("punct", UNARY_CANDIDATES[text], pos))
+                prev_text = UNARY_CANDIDATES[text]
+                continue
+        disambiguated.append(token)
+        prev_text = text
+    tokens = disambiguated
 
     opStack: List[Token] = []
     postfix: List[Token] = []
@@ -253,35 +270,61 @@ def convert_expression(tokens: List[Token], scope: int) -> Token:
     simp_expr = ()
 
     for token in postfix:
-        if token[1] in OP_LOOKUP:
+        if token[1] in UNARY_OP_LOOKUP:
+            # Unary: consume exactly ONE operand.
+            fn_name = UNARY_OP_LOOKUP[token[1]]
+            oper_type = operands[-1][0]
+
+            if oper_type is None:  # pyright: ignore[reportUnnecessaryComparison]
+                print("\t\t\tError: Identifier type not found.")
+                return ("error", "// ERROR: VARIABLE TYPE NOT FOUND", -1)
+
+            if oper_type == "literal":
+                # Fold immediately: e.g. "u-" on a literal -> negated literal.
+                simp_expr = merge_tokens([open_paren, ("punct", token[1][-1] if len(token[1]) > 1 else token[1], -1), operands.pop(), close_paren])
+                simp_expr = ("imm", simp_expr[1], simp_expr[2])
+            else:
+                simp_expr = merge_tokens([("ident", fn_name, -1), open_paren, operands.pop(), close_paren])
+                simp_expr = (oper_type, simp_expr[1], simp_expr[2])
+
+            operands.append(simp_expr)
+
+        elif token[1] in OP_LOOKUP:
             op = OP_LOOKUP[token[1]]
             oper_1_type = operands[0][0]
             oper_2_type = operands[1][0]
 
-            if oper_1_type == None or oper_2_type == None: # pyright: ignore[reportUnnecessaryComparison]
+            if oper_1_type is None or oper_2_type is None:  # pyright: ignore[reportUnnecessaryComparison]
                 print("\t\t\tError: Identifier type not found.")
                 return ("error", "// ERROR: VARIABLE TYPE NOT FOUND", -1)
+            elif not oper_1_type == "literal" and not oper_2_type == "literal" and oper_1_type != oper_2_type:
+                print("\t\t\tWARNING: Different encrypted types mixed in the same operation.")
 
-            if oper_1_type == "literal" and oper_2_type  == "literal":
+            # Comparisons on uint_enc use the unsigned variant of the op name.
+            if token[1] in ("<", ">") and (oper_1_type == "uint_enc" or oper_2_type == "uint_enc"):
+                op = op + "u"   # "slt" -> "sltu", "sgt" -> "sgtu"
+
+            if oper_1_type == "literal" and oper_2_type == "literal":
                 simp_expr = merge_tokens([open_paren, operands.pop(-2), token, operands.pop(), close_paren])
                 simp_expr = ("imm", simp_expr[1], simp_expr[2])
             elif oper_1_type == "literal":
                 op_str = "i" + op + "_enc"
                 simp_expr = merge_tokens([open_paren, operands.pop(-2), comma_space, operands.pop(), close_paren])
-                simp_expr = ("int_enc", op_str + simp_expr[1], simp_expr[2])
+                simp_expr = (oper_2_type, op_str + simp_expr[1], simp_expr[2])
             elif oper_2_type == "literal":
                 op_str = op + "i" + "_enc"
                 simp_expr = merge_tokens([open_paren, operands.pop(-2), comma_space, operands.pop(), close_paren])
-                simp_expr = ("int_enc", op_str + simp_expr[1], simp_expr[2])
+                simp_expr = (oper_1_type, op_str + simp_expr[1], simp_expr[2])
             else:
                 op_str = op + "_enc"
                 simp_expr = merge_tokens([open_paren, operands.pop(-2), comma_space, operands.pop(), close_paren])
-                simp_expr = ("int_enc", op_str + simp_expr[1], simp_expr[2])
+                result_type = "uint_enc" if "uint_enc" in (oper_1_type, oper_2_type) else "int_enc"
+                simp_expr = (result_type, op_str + simp_expr[1], simp_expr[2])
 
             operands.append(simp_expr)
         else:
             if token[0] == "ident":
-                operands.append((lookup_identifier(token[1], scope), token[1], token[2])) # pyright: ignore[reportArgumentType]
+                operands.append((lookup_identifier(token[1], scope), token[1], token[2]))  # pyright: ignore[reportArgumentType]
             else:
                 operands.append(token)
 
@@ -323,10 +366,22 @@ identifiers: List[Tuple[str, str, int]] = []
 def log_identifiers(tokens: List[Token], scope: int, funct_scope: int) -> None:
     print(f"\nLogging at scope {scope}: {" ".join([token[1] for token in tokens])}")
 
+    if tokens[0][1] == "const":
+        tokens = tokens[1:]
+
     if tokens[0][1] in ["int_enc", "uint_enc", "int"]:
         if not len(tokens) < 3 and tokens[2][1] == "=":
             # variable initialization
-            identifiers.append((tokens[0][1], tokens[1][1], scope))
+            depth = 0
+            for i, token in enumerate(tokens):
+                if token[1] == ")":
+                    depth -= 1
+                elif token[1] == "(":
+                    depth += 1
+                elif token[1] == "," or i == 0:
+                    if depth == 0:
+                        identifiers.append((tokens[0][1], tokens[i + 1][1], scope))
+
         elif not len(tokens) < 3 and tokens[2][1] == "[":
             # array declaration or initialization
             identifiers.append((tokens[0][1], tokens[1][1], scope))
@@ -355,11 +410,32 @@ def log_identifiers(tokens: List[Token], scope: int, funct_scope: int) -> None:
     return
 
 
+C_VARIABLE_KEYWORDS = [
+    # Basic Data Types
+    "char", "int", "float", "double", "void", "_Bool", "_Complex", "_Imaginary", "int_enc", "uint_enc",
+    
+    # Type Modifiers
+    "signed", "unsigned", "short", "long",
+    
+    # Type Qualifiers
+    "const", "volatile", "restrict",
+    
+    # Storage Class Specifiers
+    "auto", "register", "static", "extern", "typedef", "_Thread_local",
+    
+    # User-Defined Type Structuring
+    "struct", "union", "enum"
+]
+
+
 def rewrite_line(tokens: List[Token], scope: int) -> str:
     print(f"\nRewriting at scope {scope}: \t{" ".join([token[1] for token in tokens])}")
 
     open_curl = ("punct", "{", -1)
     close_curl = ("punct", "}", -1)
+
+    if tokens[0][1] == "const":
+            tokens = tokens[1:]
 
     if tokens[0][1] in ["int_enc", "uint_enc"]:
             if len(tokens) < 3:
@@ -426,7 +502,7 @@ def rewrite_line(tokens: List[Token], scope: int) -> str:
                         value_str += value[1] + ", "
                     value_str += values[-1][1]
 
-                    return "int_enc " + tokens[1][1] + " [" + tokens[3][1] + "] = {" + value_str + "}"
+                    return f"{tokens[0][1]} " + tokens[1][1] + " [" + tokens[3][1] + "] = {" + value_str + "}"
                 else:
                     # array declaration
                     pass
@@ -454,13 +530,13 @@ def rewrite_line(tokens: List[Token], scope: int) -> str:
                     # function call
                     parsed = function_parse(tokens, scope)
                     return parsed[1]
-                elif type == "int_enc":
+                elif type in ["int_enc", "uint_enc"]:
                     # int_enc assignments
                     if tokens[1][1] == "=":
                         value = function_parse(tokens[2:], scope)
                         if value[0] == "literal":
                             # curly brackets and cast needed
-                            return merge_tokens([tokens[0], ("punct", " = ", -1), ("helper", "(int_enc)", -1), open_curl, value, close_curl])[1]
+                            return merge_tokens([tokens[0], ("punct", " = ", -1), ("helper", f"({type})", -1), open_curl, value, close_curl])[1]
                         else:
                             return merge_tokens([tokens[0], ("punct", " = ", -1), value])[1]
                     elif tokens[1][1] == "++":
@@ -651,8 +727,12 @@ def main(pre_file: str, processed_file: str) -> None:
             print(f"\t{ident[1]}")
     print("int_enc:")
     for ident in identifiers:
-            if ident[0] == "int_enc":
-                print(f"\t{ident[1]}")
+        if ident[0] == "int_enc":
+            print(f"\t{ident[1]}")
+    print("uint_enc:")
+    for ident in identifiers:
+        if ident[0] == "uint_enc":
+            print(f"\t{ident[1]}")
     print()
     print("Functions by return type:")
     print()
@@ -660,10 +740,14 @@ def main(pre_file: str, processed_file: str) -> None:
     for ident in identifiers:
         if ident[0] == "funct_int":
             print(f"\t{ident[1]}")
-    print("funct_int_enc:")
+    print("int_enc:")
     for ident in identifiers:
-            if ident[0] == "funct_int_enc":
-                print(f"\t{ident[1]}")
+        if ident[0] == "funct_int_enc":
+            print(f"\t{ident[1]}")
+    print("uint_enc:")
+    for ident in identifiers:
+        if ident[0] == "funct_uint_enc":
+            print(f"\t{ident[1]}")
 
     print("-"*100)
     print("="*100)
