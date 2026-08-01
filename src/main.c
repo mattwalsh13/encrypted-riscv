@@ -1,8 +1,19 @@
 int_enc globalCount = 0;
+const uint_enc globalMax = 100;
 
 int_enc addDouble(int_enc a, int_enc b, int_enc useless) {
     int_enc c = a + b;
     return c + b;
+}
+
+uint_enc uaddDouble(uint_enc a, uint_enc b, uint_enc useless) {
+    uint_enc c = a + b;
+    return c + b;
+}
+
+int getSeven() {
+    int seven = 7;
+    return seven;
 }
 
 int main() {
@@ -16,40 +27,104 @@ int main() {
     uint_enc test = 2;
     const int_enc thirteen = 13;
 
-    uresult = no_neg < test;
-    uresult = test < no_neg;
-    // result = x > y;
-
+    // int_enc <op> int_enc
     result = x & y;
+    result = x | y;
+    result = x ^ y;
+    result = x << y;
+    result = x >> y;
     result = x + y;
+    result = x - y;
+    result = x < y;
+    result = x > y;
 
+    // int_enc <op> imm
+    result = x & 13;
+    result = x | 13;
+    result = x ^ 13;
+    result = x << 13;
+    result = x >> 13;
     result = x + 13;
-    result = 13 + x;
+    result = x - 13;
+    result = x < 13;
+    result = x > 13;
 
+    // imm <op> int_enc
+    result = 13 & x;
+    result = 13 | x;
+    result = 13 ^ x;
+    result = 13 << x;
+    result = 13 >> x;
+    result = 13 + x;
+    result = 13 - x;
+    result = 13 < x;
+    result = 13 > x;
+
+    // uint_enc <op> uint_enc
+    uresult = no_neg & test;
+    uresult = no_neg | test;
+    uresult = no_neg ^ test;
+    uresult = no_neg << test;
+    uresult = no_neg >> test;
+    uresult = no_neg + test;
+    uresult = no_neg - test;
+    uresult = no_neg < test;
+    uresult = no_neg > test;
+
+    // uint_enc <op> imm
+    uresult = no_neg & 3;
+    uresult = no_neg | 3;
+    uresult = no_neg ^ 3;
+    uresult = no_neg << 3;
+    uresult = no_neg >> 3;
+    uresult = no_neg + 3;
+    uresult = no_neg - 3;
+    uresult = no_neg < 3;
+    uresult = no_neg > 3;
+
+    // imm <op> uint_enc
+    uresult = 3 & no_neg;
+    uresult = 3 | no_neg;
+    uresult = 3 ^ no_neg;
+    uresult = 3 << no_neg;
+    uresult = 3 >> no_neg;
+    uresult = 3 + no_neg;
+    uresult = 3 - no_neg;
+    uresult = 3 < no_neg;
+    uresult = 3 > no_neg;
+
+    // multi-declare / multi-init on one line
     int_enc a = x + y, b = y - x;
 
+    // compound assignment / unary
     x += y;
     x -= y;
-
     x++;
-    // x--;
+    x--;
 
+    // useless statement
     x;
 
-    int i = 0;
+    // nested function calls with complex expressions
+    result = addDouble(addDouble(x - thirteen, y, x) + 1, addDouble(x, y << 2, x), thirteen);
+    result = addDouble(addDouble(x + y << x && (y - 1), y, x), y, x);
+    uresult = uaddDouble(uaddDouble(no_neg, test, no_neg), test, no_neg);
+    uresult = uaddDouble(uaddDouble(no_neg, test, test), uaddDouble(test, no_neg, test), no_neg);
 
-    while (i < 10) {
-        int_enc x = 13;
-        i++;
-    }
-
+    // calls with discarded return values
     addDouble(x, y, x);
-
-    result = addDouble(x, y, x);
+    addDouble(x, y, y);
 
     z = 0x0;
 
-    addDouble(x, y, y);
+    // ensure int is untouched
+    int seven = getSeven();
+    int i = 0;
+
+    while (i < 10) {
+        int_enc x = 13; // ensure scope
+        i++;
+    }
 
     return 0;
 }

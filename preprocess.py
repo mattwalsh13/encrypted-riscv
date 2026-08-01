@@ -139,6 +139,17 @@ def find_paren_contents(tokens: List[Token], start_idx: int, end_idx: int) -> Op
     return None
 
 
+BASIC_OP = {
+    "+",
+    "<",
+    "^",
+    "|",
+    "&",
+    "-",
+    ">",
+    "="
+}
+
 OP_LOOKUP = {
     "+": "add",
     "<": "slt",
@@ -148,7 +159,13 @@ OP_LOOKUP = {
     "<<": "sll",
     ">>": "srl",
     "-": "sub",
-    ">": "sgt"
+    ">": "sgt",
+    "^^": "lxor",
+    "||": "lor",
+    "&&": "land",
+    "<=": "slet",
+    ">=": "sget",
+    "==": "set"
 }
 
 # Unary operators map to named functions instead of "<op>_enc(a, b)" shape,
@@ -222,6 +239,18 @@ def convert_expression(tokens: List[Token], scope: int) -> Token:
     if int_present and enc_present:
         print("\tWARNING: Mixing int and int_enc/uint_enc types in this expression")
 
+    # Merge tokens like "<<" and "<="
+    for i, token in enumerate(tokens):
+        if token[1] in BASIC_OP and tokens[i + 1][1] in BASIC_OP:
+            tokens[i] = merge_tokens(tokens[i:i+2])
+            tokens[i + 1] = ("remove", "remove", -1)
+
+    new_tokens: List[Token] = []
+    for token in tokens:
+        if token[0] != "remove":
+            new_tokens.append(token)
+    tokens = new_tokens
+
     # --- Disambiguate unary vs. binary '-', '!', '~' before the shunting-yard pass ---
     # A '-'/'!'/'~' is unary if it's the first token, or the previous token was
     # an operator/'(' /',' (i.e. we're at the START of an operand, not between two).
@@ -291,8 +320,8 @@ def convert_expression(tokens: List[Token], scope: int) -> Token:
 
         elif token[1] in OP_LOOKUP:
             op = OP_LOOKUP[token[1]]
-            oper_1_type = operands[0][0]
-            oper_2_type = operands[1][0]
+            oper_1_type = operands[-2][0]
+            oper_2_type = operands[-1][0]
 
             if oper_1_type is None or oper_2_type is None:  # pyright: ignore[reportUnnecessaryComparison]
                 print("\t\t\tError: Identifier type not found.")
@@ -601,9 +630,11 @@ def function_parse(tokens: List[Token], scope: int) -> Token:
     """
     Takes in a function call in the form of tokens. Breaks down into the arguments, and converts said arguments (handle nested calls)
     """
+    print(f"\nfunction parse {tokens}")
 
     for i, token in enumerate(tokens[0:len(tokens) - 1]):
         type = lookup_identifier(token[1], scope)
+        print(f"\ntype: {type}")
         if not type == None and type.startswith("funct_"):
             function_call = extract_function_call(tokens[i:len(tokens)])
             args: List[List[Token]] = get_arguments(function_call)

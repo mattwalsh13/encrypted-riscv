@@ -3,10 +3,21 @@
 #define ZERO_REGISTER xor_enc(TEMP_ZERO_REGISTER_HELPER, TEMP_ZERO_REGISTER_HELPER)
 
 int_enc globalCount = {0};
+uint_enc globalMax = {100};
 
 int_enc addDouble(int_enc a , int_enc b , int_enc useless) {
     int_enc c = add_enc(a, b);
     return add_enc(c, b);
+}
+
+uint_enc uaddDouble(uint_enc a , uint_enc b , uint_enc useless) {
+    uint_enc c = add_enc(a, b);
+    return add_enc(c, b);
+}
+
+int getSeven() {
+    int seven = 7;
+    return seven;
 }
 
 int main() {
@@ -20,40 +31,104 @@ int main() {
     uint_enc test = {2};
     int_enc thirteen = {13};
 
-    uresult = sltu_enc(no_neg, test);
-    uresult = sltu_enc(test, no_neg);
-    // result = x > y;
-
+    // int_enc <op> int_enc
     result = and_enc(x, y);
+    result = or_enc(x, y);
+    result = xor_enc(x, y);
+    result = sll_enc(x, y);
+    result = srl_enc(x, y);
     result = add_enc(x, y);
+    result = sub_enc(x, y);
+    result = slt_enc(x, y);
+    result = sgt_enc(x, y);
 
+    // int_enc <op> imm
+    result = andi_enc(x, 13);
+    result = ori_enc(x, 13);
+    result = xori_enc(x, 13);
+    result = slli_enc(x, 13);
+    result = srli_enc(x, 13);
     result = addi_enc(x, 13);
-    result = iadd_enc(13, x);
+    result = subi_enc(x, 13);
+    result = slti_enc(x, 13);
+    result = sgti_enc(x, 13);
 
+    // imm <op> int_enc
+    result = iand_enc(13, x);
+    result = ior_enc(13, x);
+    result = ixor_enc(13, x);
+    result = isll_enc(13, x);
+    result = isrl_enc(13, x);
+    result = iadd_enc(13, x);
+    result = isub_enc(13, x);
+    result = islt_enc(13, x);
+    result = isgt_enc(13, x);
+
+    // uint_enc <op> uint_enc
+    uresult = and_enc(no_neg, test);
+    uresult = or_enc(no_neg, test);
+    uresult = xor_enc(no_neg, test);
+    uresult = sll_enc(no_neg, test);
+    uresult = srl_enc(no_neg, test);
+    uresult = add_enc(no_neg, test);
+    uresult = sub_enc(no_neg, test);
+    uresult = sltu_enc(no_neg, test);
+    uresult = sgtu_enc(no_neg, test);
+
+    // uint_enc <op> imm
+    uresult = andi_enc(no_neg, 3);
+    uresult = ori_enc(no_neg, 3);
+    uresult = xori_enc(no_neg, 3);
+    uresult = slli_enc(no_neg, 3);
+    uresult = srli_enc(no_neg, 3);
+    uresult = addi_enc(no_neg, 3);
+    uresult = subi_enc(no_neg, 3);
+    uresult = sltui_enc(no_neg, 3);
+    uresult = sgtui_enc(no_neg, 3);
+
+    // imm <op> uint_enc
+    uresult = iand_enc(3, no_neg);
+    uresult = ior_enc(3, no_neg);
+    uresult = ixor_enc(3, no_neg);
+    uresult = isll_enc(3, no_neg);
+    uresult = isrl_enc(3, no_neg);
+    uresult = iadd_enc(3, no_neg);
+    uresult = isub_enc(3, no_neg);
+    uresult = isltu_enc(3, no_neg);
+    uresult = isgtu_enc(3, no_neg);
+
+    // multi-declare / multi-init on one line
     int_enc a = add_enc(x, y), b = sub_enc(y, x);
 
+    // compound assignment / unary
     x = add_enc(x, y);
     x = sub_enc(x, y);
-
     x = addi_enc(x, 1);
-    // x--;
+    x = subi_enc(x, 1);
 
+    // useless statement
     x;
 
-    int i = 0;
+    // nested function calls with complex expressions
+    result = addDouble(addDouble(sub_enc(x, thirteen),y,x),addDouble(x,slli_enc(y, 2),x),thirteen);
+    result = addDouble(addDouble(land_enc(sll_enc(add_enc(x, y), x), subi_enc(y, 1)),y,x),y,x);
+    uresult = uaddDouble(uaddDouble(no_neg,test,no_neg),test,no_neg);
+    uresult = uaddDouble(uaddDouble(no_neg,test,test),uaddDouble(test,no_neg,test),no_neg);
 
-    while (i < 10) {
-        int_enc x = {13};
-        i ++;
-    }
-
+    // calls with discarded return values
     addDouble(x,y,x);
-
-    result = addDouble(x,y,x);
+    addDouble(x,y,y);
 
     z = (int_enc){0x0};
 
-    addDouble(x,y,y);
+    // ensure int is untouched
+    int seven = getSeven ( );
+    int i = 0;
+
+    while (i < 10) {
+        int_enc x = {13}; // ensure scope
+        i ++;
+    }
 
     return 0;
 }
