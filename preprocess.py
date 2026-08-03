@@ -171,11 +171,9 @@ OP_LOOKUP = {
 # Unary operators map to named functions instead of "<op>_enc(a, b)" shape,
 # since they only ever take one operand.
 UNARY_OP_LOOKUP = {
-    "u-": "negate",
-    "u!": "lnot",
-    "u~": "bnot",
-    "++": "iterate",
-    "--": "decrement",
+    "u-": "negate_enc",
+    "u!": "lnot_enc",
+    "u~": "bnot_enc",
 }
 
 ENCRYPTED_TYPES = {"int_enc", "uint_enc"}
@@ -835,7 +833,7 @@ def main(pre_file: str, processed_file: str) -> None:
     print("-"*100)
     print("\tWriting to file...")
 
-    CONSTANTS = "#include \"encrypted_types.h\"\n#define TEMP_ZERO_REGISTER_HELPER = { 0X0 }\n#define ZERO_REGISTER xor_enc(TEMP_ZERO_REGISTER_HELPER, TEMP_ZERO_REGISTER_HELPER)\n\n"
+    CONSTANTS = "#include \"encrypted_types.h\"\n\n"
     final_src = CONSTANTS + "".join(out_parts)
 
     with open(processed_file, "w") as f:

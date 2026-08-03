@@ -339,5 +339,114 @@ typedef struct { unsigned int v; } uint_enc;
 })
 
 // ADVANCED PSEUDOINSTRUCTIONS
+#define subi_enc(rs1, imm) ({ \
+    _Static_assert(__builtin_types_compatible_p(__typeof__(rs1), int_enc) || __builtin_types_compatible_p(__typeof__(rs1), uint_enc), \
+        "Error: Source register argument must be an int_enc!"); \
+    _Static_assert(__builtin_constant_p(imm), \
+        "Error: Immediate argument must be a compile-time constant literal!"); \
+    _Static_assert((imm) >= -2048 && (imm) <= 2047, \
+        "Error: RISC-V I-type immediates must fit within a signed 12-bit range!"); \
+    unsigned int __subi_enc_r = __builtin_riscv_addi_enc((rs1).v, (-imm)); \
+    DO_NOT_OPTIMIZE(__subi_enc_r); \
+    _Generic((rs1), \
+        int_enc:  (int_enc){ __subi_enc_r }, \
+        uint_enc: (uint_enc){ __subi_enc_r } \
+    ); \
+})
+
+#define ZERO_REGISTER_HELPER ((int_enc){ 0 })
+#define ZERO_REGISTER xor_enc(ZERO_REGISTER_HELPER, ZERO_REGISTER_HELPER)
+#define FULL_REGISTER addi_enc(ZERO_REGISTER, -1)
+
+#define lnot_enc(arg1) ({ \
+    _Static_assert(__builtin_types_compatible_p(__typeof__(arg1), int_enc) || __builtin_types_compatible_p(__typeof__(arg1), uint_enc), \
+        "Error: First argument to lnot_enc must be a int_enc or uint_enc!"); \
+    unsigned int __lnot_enc_r = __builtin_riscv_sltiu_enc((arg1).v, 1); \
+    DO_NOT_OPTIMIZE(__lnot_enc_r); \
+    _Generic((arg1), \
+        int_enc:  (int_enc){ __lnot_enc_r }, \
+        uint_enc: (uint_enc){ __lnot_enc_r } \
+    ); \
+})
+
+#define bnot_enc(arg1) ({ \
+    _Static_assert(__builtin_types_compatible_p(__typeof__(arg1), int_enc) || __builtin_types_compatible_p(__typeof__(arg1), uint_enc), \
+        "Error: First argument to bnot_enc must be a int_enc or uint_enc!"); \
+    unsigned int __bnot_enc_r = __builtin_riscv_xor_enc((arg1).v, FULL_REGISTER.v); \
+    DO_NOT_OPTIMIZE(__bnot_enc_r); \
+    (__typeof__(arg1)){ __bnot_enc_r }; \
+})
+
+#define negate_enc(arg1) ({ \
+    _Static_assert(__builtin_types_compatible_p(__typeof__(arg1), int_enc), \
+        "Error: First argument to negate_enc must be a int_enc or uint_enc!"); \
+    unsigned int __negate_enc_r = __builtin_riscv_addi_enc(__builtin_riscv_xor_enc((arg1).v, FULL_REGISTER.v), 1); \
+    DO_NOT_OPTIMIZE(__negate_enc_r); \
+    (int_enc){ __negate_enc_r }; \
+})
+
+#define isub_enc(imm, rs1) ({ \
+    _Static_assert(__builtin_types_compatible_p(__typeof__(rs1), int_enc) || __builtin_types_compatible_p(__typeof__(rs1), uint_enc), \
+        "Error: Source register argument must be an int_enc!"); \
+    _Static_assert(__builtin_constant_p(imm), \
+        "Error: Immediate argument must be a compile-time constant literal!"); \
+    _Static_assert((imm) >= -2048 && (imm) <= 2047, \
+        "Error: RISC-V I-type immediates must fit within a signed 12-bit range!"); \
+    unsigned int __isub_enc_r = __builtin_riscv_addi_enc(negate_enc((rs1).v), (imm)); \
+    DO_NOT_OPTIMIZE(__isub_enc_r); \
+    _Generic((rs1), \
+        int_enc:  (int_enc){ __isub_enc_r }, \
+        uint_enc: (uint_enc){ __isub_enc_r } \
+    ); \
+})
+
+#define set_enc(arg1, arg2) ({ \
+    _Static_assert(__builtin_types_compatible_p(__typeof__(arg1), int_enc) || __builtin_types_compatible_p(__typeof__(arg1), uint_enc), \
+        "Error: First argument to set_enc must be a int_enc!"); \
+    _Static_assert(__builtin_types_compatible_p(__typeof__(arg1), int_enc) || __builtin_types_compatible_p(__typeof__(arg1), uint_enc), \
+        "Error: Second argument to set_enc must be a int_enc!"); \
+    unsigned int __set_enc_r = lnot_enc(sub_enc(arg1, arg2)).v; \
+    DO_NOT_OPTIMIZE(__set_enc_r); \
+    _Generic((arg1), \
+        int_enc:  (int_enc){ __set_enc_r }, \
+        uint_enc: (uint_enc){ __set_enc_r } \
+    ); \
+})
+
+#define seti_enc(arg1, imm) ({ \
+    _Static_assert(__builtin_types_compatible_p(__typeof__(arg1), int_enc) || __builtin_types_compatible_p(__typeof__(arg1), uint_enc), \
+        "Error: First argument to seti_enc must be a int_enc!"); \
+    _Static_assert(__builtin_constant_p(imm), \
+        "Error: Immediate argument must be a compile-time constant literal!"); \
+    unsigned int __seti_enc_r = lnot_enc(subi_enc((arg1).v, (imm))).v; \
+    DO_NOT_OPTIMIZE(__seti_enc_r); \
+    _Generic((arg1), \
+        int_enc:  (int_enc){ __seti_enc_r }, \
+        uint_enc: (uint_enc){ __seti_enc_r } \
+    ); \
+})
+
+#define iset_enc(arg1, imm) ({ \
+    _Static_assert(__builtin_types_compatible_p(__typeof__(arg1), int_enc) || __builtin_types_compatible_p(__typeof__(arg1), uint_enc), \
+        "Error: First argument to iset_enc must be a int_enc!"); \
+    _Static_assert(__builtin_constant_p(imm), \
+        "Error: Immediate argument must be a compile-time constant literal!"); \
+    unsigned int __iset_enc_r = lnot_enc(isub_enc((imm), (arg1).v)).v; \
+    DO_NOT_OPTIMIZE(__iset_enc_r); \
+    _Generic((arg1), \
+        int_enc:  (int_enc){ __iset_enc_r }, \
+        uint_enc: (uint_enc){ __iset_enc_r } \
+    ); \
+})
+
+#define sgt_enc(arg1, arg2) ({ \
+    _Static_assert(__builtin_types_compatible_p(__typeof__(arg1), int_enc), \
+        "Error: First argument to sgt_enc must be a int_enc!"); \
+    _Static_assert(__builtin_types_compatible_p(__typeof__(arg2), int_enc), \
+        "Error: Second argument to sgt_enc must be a int_enc!"); \
+    unsigned int __sgt_enc_r = slt_enc((arg1).v, (arg2).v); \
+    DO_NOT_OPTIMIZE(__sgt_enc_r); \
+    (int_enc){ __sgt_enc_r }; \
+})
 
 #endif // ENCRYPTED_TYPES_H

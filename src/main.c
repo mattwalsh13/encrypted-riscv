@@ -20,78 +20,119 @@ int main() {
     int_enc list[5] = {1, 2, 3, 4, 5};
     int_enc x = 0xD;
     int_enc y = 0x7;
-    int_enc result;
-    uint_enc uresult;
+    int_enc result = 0;
+    uint_enc uresult = 0;
     int_enc z, w;
     uint_enc no_neg = 3;
     uint_enc test = 2;
     const int_enc thirteen = 13;
 
+    // unary
+    result = -result;
+    result = !result;
+    result = ~result;
+
     // int_enc <op> int_enc
     result = x & y;
+    result = x && y;
     result = x | y;
+    result = x || y;
     result = x ^ y;
+    result = x ^^ y;
     result = x << y;
     result = x >> y;
     result = x + y;
     result = x - y;
+    result = x == y;
     result = x < y;
+    result = x <= y;
     result = x > y;
+    result = x >= y;
 
     // int_enc <op> imm
     result = x & 13;
+    result = x && 13;
     result = x | 13;
+    result = x || 13;
     result = x ^ 13;
+    result = x ^^ 13;
     result = x << 13;
     result = x >> 13;
     result = x + 13;
     result = x - 13;
+    result = x == 13;
     result = x < 13;
+    result = x <= 13;
     result = x > 13;
+    result = x >= 13;
 
     // imm <op> int_enc
     result = 13 & x;
+    result = 13 && x;
     result = 13 | x;
+    result = 13 || x;
     result = 13 ^ x;
+    result = 13 ^^ x;
     result = 13 << x;
     result = 13 >> x;
     result = 13 + x;
     result = 13 - x;
+    result = 13 == x;
     result = 13 < x;
+    result = 13 <= x;
     result = 13 > x;
+    result = 13 >= x;
 
     // uint_enc <op> uint_enc
     uresult = no_neg & test;
+    uresult = no_neg && test;
     uresult = no_neg | test;
+    uresult = no_neg || test;
     uresult = no_neg ^ test;
+    uresult = no_neg ^^ test;
     uresult = no_neg << test;
     uresult = no_neg >> test;
     uresult = no_neg + test;
     uresult = no_neg - test;
+    uresult = no_neg == test;
     uresult = no_neg < test;
+    uresult = no_neg <= test;
     uresult = no_neg > test;
+    uresult = no_neg >= test;
 
     // uint_enc <op> imm
     uresult = no_neg & 3;
+    uresult = no_neg && 3;
     uresult = no_neg | 3;
+    uresult = no_neg || 3;
     uresult = no_neg ^ 3;
+    uresult = no_neg ^^ 3;
     uresult = no_neg << 3;
     uresult = no_neg >> 3;
     uresult = no_neg + 3;
     uresult = no_neg - 3;
+    uresult = no_neg == 3;
     uresult = no_neg < 3;
+    uresult = no_neg <= 3;
     uresult = no_neg > 3;
+    uresult = no_neg >= 3;
 
     // imm <op> uint_enc
     uresult = 3 & no_neg;
+    uresult = 3 && no_neg;
     uresult = 3 | no_neg;
+    uresult = 3 || no_neg;
     uresult = 3 ^ no_neg;
+    uresult = 3 ^^ no_neg;
     uresult = 3 << no_neg;
     uresult = 3 >> no_neg;
     uresult = 3 + no_neg;
     uresult = 3 - no_neg;
+    uresult = 3 == no_neg;
     uresult = 3 < no_neg;
+    uresult = 3 <= no_neg;
     uresult = 3 > no_neg;
+    uresult = 3 >= no_neg;
 
     // multi-declare / multi-init on one line
     int_enc a = x + y, b = y - x;
