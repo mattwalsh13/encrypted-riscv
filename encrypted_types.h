@@ -645,8 +645,8 @@ typedef struct { unsigned int v; } uint_enc;
         "Error: RISC-V I-type immediates must fit within a signed 12-bit range!"); \
     unsigned int __sgti_enc_r = __builtin_riscv_sltiu_enc( \
         __builtin_riscv_or_enc( \
-            __builtin_riscv_slti_enc((rs1).v, imm)), \
-            __builtin_riscv_sltiu_enc(__builtin_riscv_sub_enc((rs1).v, (imm)), 1 \
+            __builtin_riscv_slti_enc((rs1).v, imm), \
+            __builtin_riscv_sltiu_enc(__builtin_riscv_sub_enc((rs1).v, (imm)), 1) \
         ), 1); \
     DO_NOT_OPTIMIZE(__sgti_enc_r); \
     (int_enc){ __sgti_enc_r }; \
