@@ -1,7 +1,7 @@
 #include "encrypted_types.h"
 
 int_enc globalCount = {0};
-uint_enc globalMax = {100};
+const uint_enc globalMax = {100};
 
 int_enc addDouble(int_enc a , int_enc b , int_enc useless) {
     int_enc c = add_enc(a, b);
@@ -27,7 +27,8 @@ int main() {
     int_enc z, w;
     uint_enc no_neg = {3};
     uint_enc test = {2};
-    int_enc thirteen = {13};
+    const int_enc thirteen = {13};
+    int_enc *, =, x;
 
     // unary
     result = negate_enc(result);
@@ -144,6 +145,9 @@ int main() {
     x = sub_enc(x, y);
     x = addi_enc(x, 1);
     x = subi_enc(x, 1);
+
+    // cmov
+    result = cmov_enc(x, x, y);
 
     // useless statement
     x;

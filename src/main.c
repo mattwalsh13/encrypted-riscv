@@ -26,6 +26,7 @@ int main() {
     uint_enc no_neg = 3;
     uint_enc test = 2;
     const int_enc thirteen = 13;
+    int_enc * pointer1 = &x;
 
     // unary
     result = -result;
@@ -142,6 +143,9 @@ int main() {
     x -= y;
     x++;
     x--;
+
+    // cmov
+    result = x ? x : y;
 
     // useless statement
     x;

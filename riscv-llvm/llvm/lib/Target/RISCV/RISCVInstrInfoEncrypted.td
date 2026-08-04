@@ -143,7 +143,7 @@ def CMOV_ENC : Instruction {
 
     dag OutOperandList = (outs GPR:$rd);
     dag InOperandList  = (ins GPR:$rs1, GPR:$rs2, GPR:$rs3);
-    let AsmString = "cmov_enc\t$rd, $rs3, $rs2, $rs1";
+    let AsmString = "cmov_enc\t$rd, $rs2, $rs1, $rs3";
 }
 
 def : Pat<(int_riscv_cmov_enc GPR:$rs1, GPR:$rs2, GPR:$rs3), (CMOV_ENC GPR:$rs1, GPR:$rs2, GPR:$rs3)>;
