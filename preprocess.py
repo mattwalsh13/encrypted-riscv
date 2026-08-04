@@ -328,7 +328,7 @@ def convert_expression(tokens: List[Token], scope: int) -> Token:
                 print("\t\t\tWARNING: Different encrypted types mixed in the same operation.")
 
             # Comparisons on uint_enc use the unsigned variant of the op name.
-            if token[1] in ("<", ">") and (oper_1_type == "uint_enc" or oper_2_type == "uint_enc"):
+            if token[1] in ("<", ">", "<=", ">=") and (oper_1_type == "uint_enc" or oper_2_type == "uint_enc"):
                 op = op + "u"   # "slt" -> "sltu", "sgt" -> "sgtu"
 
             if oper_1_type == "literal" and oper_2_type == "literal":

@@ -98,9 +98,9 @@ int main() {
     uresult = sub_enc(no_neg, test);
     uresult = set_enc(no_neg, test);
     uresult = sltu_enc(no_neg, test);
-    uresult = slet_enc(no_neg, test);
+    uresult = sletu_enc(no_neg, test);
     uresult = sgtu_enc(no_neg, test);
-    uresult = sget_enc(no_neg, test);
+    uresult = sgetu_enc(no_neg, test);
 
     // uint_enc <op> imm
     uresult = andi_enc(no_neg, 3);
@@ -115,9 +115,9 @@ int main() {
     uresult = subi_enc(no_neg, 3);
     uresult = seti_enc(no_neg, 3);
     uresult = sltui_enc(no_neg, 3);
-    uresult = sleti_enc(no_neg, 3);
+    uresult = sletui_enc(no_neg, 3);
     uresult = sgtui_enc(no_neg, 3);
-    uresult = sgeti_enc(no_neg, 3);
+    uresult = sgetui_enc(no_neg, 3);
 
     // imm <op> uint_enc
     uresult = iand_enc(3, no_neg);
@@ -132,9 +132,9 @@ int main() {
     uresult = isub_enc(3, no_neg);
     uresult = iset_enc(3, no_neg);
     uresult = isltu_enc(3, no_neg);
-    uresult = islet_enc(3, no_neg);
+    uresult = isletu_enc(3, no_neg);
     uresult = isgtu_enc(3, no_neg);
-    uresult = isget_enc(3, no_neg);
+    uresult = isgetu_enc(3, no_neg);
 
     // multi-declare / multi-init on one line
     int_enc a = add_enc(x, y), b = sub_enc(y, x);
