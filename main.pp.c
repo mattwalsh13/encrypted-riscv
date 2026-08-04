@@ -114,10 +114,10 @@ int main() {
     uresult = addi_enc(no_neg, 3);
     uresult = subi_enc(no_neg, 3);
     uresult = seti_enc(no_neg, 3);
-    uresult = sltui_enc(no_neg, 3);
-    uresult = sletui_enc(no_neg, 3);
-    uresult = sgtui_enc(no_neg, 3);
-    uresult = sgetui_enc(no_neg, 3);
+    uresult = sltiu_enc(no_neg, 3);
+    uresult = sletiu_enc(no_neg, 3);
+    uresult = sgtiu_enc(no_neg, 3);
+    uresult = sgetiu_enc(no_neg, 3);
 
     // imm <op> uint_enc
     uresult = iand_enc(3, no_neg);

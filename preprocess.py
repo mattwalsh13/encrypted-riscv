@@ -320,6 +320,7 @@ def convert_expression(tokens: List[Token], scope: int) -> Token:
             op = OP_LOOKUP[token[1]]
             oper_1_type = operands[-2][0]
             oper_2_type = operands[-1][0]
+            unsigned = ""
 
             if oper_1_type is None or oper_2_type is None:  # pyright: ignore[reportUnnecessaryComparison]
                 print("\t\t\tError: Identifier type not found.")
@@ -329,21 +330,21 @@ def convert_expression(tokens: List[Token], scope: int) -> Token:
 
             # Comparisons on uint_enc use the unsigned variant of the op name.
             if token[1] in ("<", ">", "<=", ">=") and (oper_1_type == "uint_enc" or oper_2_type == "uint_enc"):
-                op = op + "u"   # "slt" -> "sltu", "sgt" -> "sgtu"
+                unsigned = "u"
 
             if oper_1_type == "literal" and oper_2_type == "literal":
                 simp_expr = merge_tokens([open_paren, operands.pop(-2), token, operands.pop(), close_paren])
                 simp_expr = ("imm", simp_expr[1], simp_expr[2])
             elif oper_1_type == "literal":
-                op_str = "i" + op + "_enc"
+                op_str = "i" + op + unsigned + "_enc"
                 simp_expr = merge_tokens([open_paren, operands.pop(-2), comma_space, operands.pop(), close_paren])
                 simp_expr = (oper_2_type, op_str + simp_expr[1], simp_expr[2])
             elif oper_2_type == "literal":
-                op_str = op + "i" + "_enc"
+                op_str = op + "i" + unsigned + "_enc"
                 simp_expr = merge_tokens([open_paren, operands.pop(-2), comma_space, operands.pop(), close_paren])
                 simp_expr = (oper_1_type, op_str + simp_expr[1], simp_expr[2])
             else:
-                op_str = op + "_enc"
+                op_str = op + unsigned + "_enc"
                 simp_expr = merge_tokens([open_paren, operands.pop(-2), comma_space, operands.pop(), close_paren])
                 result_type = "uint_enc" if "uint_enc" in (oper_1_type, oper_2_type) else "int_enc"
                 simp_expr = (result_type, op_str + simp_expr[1], simp_expr[2])
