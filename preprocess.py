@@ -62,7 +62,6 @@ def tokenize(src: str) -> List[Token]:
         tokens.append((kind, m.group(), m.start())) # type: ignore
     return tokens
 
-
 # A Span is (start_idx, end_idx, kind), kind is 'stmt' or 'header'.
 #   'stmt'   -> a ';'-terminated statement/declaration (as before)
 #   'header' -> a function signature or if/while/for/switch condition,
@@ -195,7 +194,7 @@ ISP = { # type: ignore
     "<<": 10, ">>": 10,
     "+": 11, "-": 11,
     "*": 12, "/": 12, "%": 12,
-    "u-": 13, "u!": 13, "u~": 13, "++": 13, "--": 13,   # unary, right-assoc (ISP < ICP)
+    "u-": 13, "u!": 13, "u~": 13, "u*": 13, "u&": 13, "++": 13, "--": 13,   # unary, right-assoc (ISP < ICP)
     "(": 0
 }
 ICP = {
@@ -211,13 +210,13 @@ ICP = {
     "<<": 10, ">>": 10,
     "+": 11, "-": 11,
     "*": 12, "/": 12, "%": 12,
-    "u-": 14, "u!": 14, "u~": 14, "++": 14, "--": 14,   # right-assoc: ICP > ISP
+    "u-": 14, "u!": 14, "u~": 14, "u*": 14, "u&": 14, "++": 14, "--": 14,   # right-assoc: ICP > ISP
     "(": 15
 }
 
 # Tokens that can be unary depending on context, and the "u"-prefixed pseudo-
 # token they get rewritten to when they appear in unary position.
-UNARY_CANDIDATES = {"-": "u-", "!": "u!", "~": "u~"}
+UNARY_CANDIDATES = {"-": "u-", "!": "u!", "~": "u~", "*": "u*", "&": "u&"}
 
 
 def convert_expression(tokens: List[Token], scope: int) -> Token:
@@ -297,6 +296,30 @@ def convert_expression(tokens: List[Token], scope: int) -> Token:
     simp_expr = ()
 
     for token in postfix:
+        if token[1] == "u*":
+            oper = operands.pop()
+            oper_type = oper[0]
+            if oper_type.startswith("ptr|"):
+                _, base, depth_str = oper_type.split("|")
+                depth = int(depth_str)
+                new_type = base if depth == 1 else f"ptr|{base}|{depth-1}"
+            else:
+                print("\t\t\tWARNING: Dereferencing a non-pointer operand.")
+                new_type = oper_type
+            operands.append((new_type, f"(*{oper[1]})", oper[2]))
+            continue
+
+        if token[1] == "u&":
+            oper = operands.pop()
+            oper_type = oper[0]
+            if oper_type.startswith("ptr|"):
+                _, base, depth_str = oper_type.split("|")
+                new_type = f"ptr|{base}|{int(depth_str)+1}"
+            else:
+                new_type = f"ptr|{oper_type}|1"
+            operands.append((new_type, f"(&{oper[1]})", oper[2]))
+            continue
+
         if token[1] in UNARY_OP_LOOKUP:
             # Unary: consume exactly ONE operand.
             fn_name = UNARY_OP_LOOKUP[token[1]]
@@ -321,6 +344,15 @@ def convert_expression(tokens: List[Token], scope: int) -> Token:
             oper_1_type = operands[-2][0]
             oper_2_type = operands[-1][0]
             unsigned = ""
+
+            is_ptr_1 = oper_1_type.startswith("ptr|")
+            is_ptr_2 = oper_2_type.startswith("ptr|")
+            if is_ptr_1 or is_ptr_2:
+                # pointer arithmetic / comparison plain C, never _enc
+                merged = merge_tokens([open_paren, operands.pop(-2), token, operands.pop(), close_paren])
+                result_type = oper_1_type if is_ptr_1 else oper_2_type
+                operands.append((result_type, merged[1], merged[2]))
+                continue
 
             if oper_1_type is None or oper_2_type is None:  # pyright: ignore[reportUnnecessaryComparison]
                 print("\t\t\tError: Identifier type not found.")
@@ -352,7 +384,13 @@ def convert_expression(tokens: List[Token], scope: int) -> Token:
             operands.append(simp_expr)
         else:
             if token[0] == "ident":
-                operands.append((lookup_identifier(token[1], scope), token[1], token[2]))  # pyright: ignore[reportArgumentType]
+                lookup = lookup_identifier(token[1], scope)
+                if lookup is None: # type: ignore
+                    operands.append(("none", token[1], token[2]))
+                else:
+                    base_type, depth = lookup # type: ignore
+                    tag = base_type if depth == 0 else f"ptr|{base_type}|{depth}"
+                    operands.append((tag, token[1], token[2]))
             else:
                 operands.append(token)
 
@@ -387,8 +425,8 @@ Multi-initializations
 # that directly encloses s (or None for the global/file scope).
 scope_parent: Dict[int, Optional[int]] = {0: None}   # 0 = global scope
 next_scope_id = 1
-# type ("funct_{return_type}" for functions), name, and the scope it was declared in
-identifiers: List[Tuple[str, str, int]] = []
+# type ("funct_{return_type}" for functions), name, the scope it was declared in, and pointer depth
+identifiers: List[Tuple[str, str, int, int]] = []
 
 
 def log_identifiers(tokens: List[Token], scope: int, funct_scope: int) -> None:
@@ -398,42 +436,63 @@ def log_identifiers(tokens: List[Token], scope: int, funct_scope: int) -> None:
         tokens = tokens[1:]
 
     if tokens[0][1] in ["int_enc", "uint_enc", "int"]:
-        if not len(tokens) < 3 and tokens[2][1] == "=":
-            # variable initialization
-            depth = 0
-            for i, token in enumerate(tokens):
-                if token[1] == ")":
-                    depth -= 1
-                elif token[1] == "(":
-                    depth += 1
-                elif token[1] == "," or i == 0:
-                    if depth == 0:
-                        identifiers.append((tokens[0][1], tokens[i + 1][1], scope))
+        base_type = tokens[0][1]
+        ptr_depth, name_idx = count_pointer_depth(tokens, 1)
+        after_idx = name_idx + 1
+        after = tokens[after_idx][1] if after_idx < len(tokens) else None
 
-        elif not len(tokens) < 3 and tokens[2][1] == "[":
-            # array declaration or initialization
-            identifiers.append((tokens[0][1], tokens[1][1], scope))
-        elif not len(tokens) < 3 and tokens[2][1] == "(":
+        if after == "=":
+            i = 1  # right after base_type, not name_idx — so declarator #1's stars are still visible
+            expect_declarator = True
+            depth_track = 0
+            while i < len(tokens):
+                tok = tokens[i]
+                if tok[1] == "(":
+                    depth_track += 1
+                elif tok[1] == ")":
+                    depth_track -= 1
+                elif depth_track == 0 and tok[1] == ",":
+                    expect_declarator = True   # <-- also needed: reset for the NEXT declarator
+                    i += 1
+                    continue
+                elif depth_track == 0 and expect_declarator:
+                    d, ni = count_pointer_depth(tokens, i)
+                    identifiers.append((base_type, tokens[ni][1], scope, d))
+                    expect_declarator = False
+                    i = ni
+                    continue
+                i += 1
+
+        elif after == "[":
+            identifiers.append((base_type, tokens[name_idx][1], scope, ptr_depth))
+
+        elif after == "(":
             # function declaration
-            identifiers.append((f"funct_{tokens[0][1]}", tokens[1][1], scope))
-            # add arguments to the function scope
+            identifiers.append((f"funct_{base_type}", tokens[name_idx][1], scope, ptr_depth))
             print(f"\tScope inside detected function: {funct_scope}")
             idx_close_paren = next((i for i, (_, name, _) in enumerate(tokens) if name == ")"), -1)
 
-            for i, token in enumerate(tokens[3:idx_close_paren:3]):
-                identifiers.append((token[1], tokens[(i * 3) + 1 + 3][1], funct_scope))
+            i = after_idx + 1
+            while i < idx_close_paren:
+                if tokens[i][1] == ",":
+                    i += 1
+                    continue
+                param_type = tokens[i][1]
+                p_depth, p_name_idx = count_pointer_depth(tokens, i + 1)
+                identifiers.append((param_type, tokens[p_name_idx][1], funct_scope, p_depth))
+                i = p_name_idx + 1
 
-            # TODO: nested function compatibility ?
         else:
-            # variable declaration
-            comma_indeces: List[int] = [0] # artificial, allows parser to include first
-
-            for i, token in enumerate(tokens):
-                if token[1] == ",":
-                    comma_indeces.append(i)
-
-            for comma_i in comma_indeces:
-                identifiers.append((tokens[0][1], tokens[comma_i + 1][1], scope))
+            # plain declaration(s), no initializer
+            identifiers.append((base_type, tokens[name_idx][1], scope, ptr_depth))
+            i = after_idx
+            while i < len(tokens):
+                if tokens[i][1] == ",":
+                    d, ni = count_pointer_depth(tokens, i + 1)
+                    identifiers.append((base_type, tokens[ni][1], scope, d))
+                    i = ni + 1
+                    continue
+                i += 1
 
     return
 
@@ -468,114 +527,146 @@ def rewrite_line(tokens: List[Token], scope: int) -> str:
         const = "const "
 
     if tokens[0][1] in ["int_enc", "uint_enc"]:
-            if len(tokens) < 3:
-                # single declaration
-                return f"{const}{tokens[0][1]} {tokens[1][1]}"
-            elif tokens[2][1] == "=":
-                # variable initialization(s)
-                comma_indices: List[int] = [0] # 0 is an artificial comma for the first initialization
-                depth = 0
-                conv_str = tokens[0][1] + " "
-                for i, token in enumerate(tokens):
-                    if token[1] == ")":
-                        depth -= 1
-                    elif token[1] == "(":
-                        depth += 1
-                    elif token[1] == ",":
-                        if depth == 0:
-                            comma_indices.append(i)
+        ptr_depth, name_idx = count_pointer_depth(tokens, 1)
+        stars = "*" * ptr_depth
+        after_idx = name_idx + 1
+        after = tokens[after_idx][1] if after_idx < len(tokens) else None
 
-                for i, comma_i in enumerate(comma_indices):
-                    if i != 0:
-                        conv_str += ", "
+        if after is None:
+            return f"{const}{tokens[0][1]} {stars}{tokens[name_idx][1]}"
+        elif after == "=" and ptr_depth > 0:
+            value = function_parse(tokens[after_idx + 1:], scope)
+            return f"{const}{tokens[0][1]} {stars}{tokens[name_idx][1]} = {value[1]}"
+        elif after == "=":
+            # variable initialization(s)
+            comma_indices: List[int] = [0] # 0 is an artificial comma for the first initialization
+            depth = 0
+            conv_str = tokens[0][1] + " "
+            for i, token in enumerate(tokens):
+                if token[1] == ")":
+                    depth -= 1
+                elif token[1] == "(":
+                    depth += 1
+                elif token[1] == ",":
+                    if depth == 0:
+                        comma_indices.append(i)
 
-                    if i == len(comma_indices) - 1:
-                        end = len(tokens)
-                    else:
-                        end = comma_indices[i + 1]
+            for i, comma_i in enumerate(comma_indices):
+                if i != 0:
+                    conv_str += ", "
 
-                    value = function_parse(tokens[comma_i + 3:end], scope)
-                    if value[0] == "literal":
-                        # curly brackets needed
-                        conv_str += merge_tokens([tokens[comma_i + 1], ("punct", " = ", -1), open_curl, value, close_curl])[1]
-                    else:
-                        conv_str += merge_tokens([tokens[comma_i + 1], ("punct", " = ", -1), value])[1]
-
-                return const + conv_str
-            elif tokens[2][1] == "[":
-                if len(tokens) > 5:
-                    # array initialization
-                    values: List[Token] = []
-                    comma_indices = [index for index, token in enumerate(tokens[7:]) if token[1] == ',']
-                    # artificial comma at the end
-                    comma_indices.append(next((i for i, token in enumerate(tokens[7:]) if token[1] == "}"), -1))
-
-                    for i, index in enumerate(comma_indices):
-                        if i == 0:
-                            start = 7
-                        else:
-                            start = comma_indices[i - 1] + 8
-
-                        value = function_parse(tokens[start:index + 7], scope)
-
-                        if value[0] == "literal":
-                            # needs curls
-                            value = merge_tokens([open_curl, value, close_curl])
-
-                        if i != len(comma_indices) - 1:
-                            print()
-
-                        values.append(value)
-
-                    value_str = ""
-                    for value in values[:-1]:
-                        value_str += value[1] + ", "
-                    value_str += values[-1][1]
-
-                    return f"{const}{tokens[0][1]} " + tokens[1][1] + " [" + tokens[3][1] + "] = {" + value_str + "}"
+                if i == len(comma_indices) - 1:
+                    end = len(tokens)
                 else:
-                    return f"{const}{tokens[0][1]} {tokens[1][1]} [{tokens[3][1]}]"
-            elif not tokens[3][1] in C_VARIABLE_KEYWORDS:
-                # multiple var declarations
-                conv_str = tokens[0][1] + " "
+                    end = comma_indices[i + 1]
 
-                for i, token in enumerate(tokens[1::2]):
-                    conv_str += token[1]
-                    if not i == (len(tokens) - 1) // 2:
-                        conv_str += ", "
+                value = function_parse(tokens[comma_i + 3:end], scope)
+                if value[0] == "literal":
+                    # curly brackets needed
+                    conv_str += merge_tokens([tokens[comma_i + 1], ("punct", " = ", -1), open_curl, value, close_curl])[1]
+                else:
+                    conv_str += merge_tokens([tokens[comma_i + 1], ("punct", " = ", -1), value])[1]
 
-                return conv_str
+            return const + conv_str
+        elif tokens[2][1] == "[":
+            if len(tokens) > 5:
+                # array initialization
+                values: List[Token] = []
+                comma_indices = [index for index, token in enumerate(tokens[7:]) if token[1] == ',']
+                # artificial comma at the end
+                comma_indices.append(next((i for i, token in enumerate(tokens[7:]) if token[1] == "}"), -1))
+
+                for i, index in enumerate(comma_indices):
+                    if i == 0:
+                        start = 7
+                    else:
+                        start = comma_indices[i - 1] + 8
+
+                    value = function_parse(tokens[start:index + 7], scope)
+
+                    if value[0] == "literal":
+                        # needs curls
+                        value = merge_tokens([open_curl, value, close_curl])
+
+                    if i != len(comma_indices) - 1:
+                        print()
+
+                    values.append(value)
+
+                value_str = ""
+                for value in values[:-1]:
+                    value_str += value[1] + ", "
+                value_str += values[-1][1]
+
+                return f"{const}{tokens[0][1]} " + tokens[1][1] + " [" + tokens[3][1] + "] = {" + value_str + "}"
+            else:
+                return f"{const}{tokens[0][1]} {tokens[1][1]} [{tokens[3][1]}]"
+        elif not tokens[3][1] in C_VARIABLE_KEYWORDS:
+            # multiple var declarations
+            conv_str = tokens[0][1] + " "
+
+            for i, token in enumerate(tokens[1::2]):
+                conv_str += token[1]
+                if not i == (len(tokens) - 1) // 2:
+                    conv_str += ", "
+
+            return conv_str
+    elif tokens[0][1] == "*":
+        deref_depth, name_idx = count_pointer_depth(tokens, 0)
+        ptr_name = tokens[name_idx][1]
+        lookup = lookup_identifier(ptr_name, scope)
+        if lookup is None:
+            print("Syntax error: variable name not recognized in this scope")
+        else:
+            base_type, decl_depth = lookup
+            result_depth = decl_depth - deref_depth
+            if tokens[name_idx + 1][1] == "=":
+                value = function_parse(tokens[name_idx + 2:], scope)
+                deref_text = "*" * deref_depth + ptr_name
+                if result_depth == 0 and base_type in ["int_enc", "uint_enc"]:
+                    if value[0] == "literal":
+                        return merge_tokens([("ident", deref_text, -1), ("punct", " = ", -1),
+                                            ("helper", f"({base_type})", -1), open_curl, value, close_curl])[1]
+                    else:
+                        return merge_tokens([("ident", deref_text, -1), ("punct", " = ", -1), value])[1]
+                else:
+                    return merge_tokens([("ident", deref_text, -1), ("punct", " = ", -1), value])[1]
     elif tokens[0][1] in [ident[1] for ident in identifiers]:
             # assignment, function call, or useless line
             if len(tokens) == 1:
                 # useless line like "x;"
                 pass
             else:
-                type = lookup_identifier(tokens[0][1], scope)
-
-                if type == None:
+                lookup = lookup_identifier(tokens[0][1], scope)
+                if lookup is None:
                     print("Syntax error: variable name not recognized in this scope")
-                elif type.startswith("funct_"):
-                    # function call
-                    parsed = function_parse(tokens, scope)
-                    return parsed[1]
-                elif type in ["int_enc", "uint_enc"]:
-                    # int_enc assignments
-                    if tokens[1][1] == "=":
-                        value = function_parse(tokens[2:], scope)
-                        if value[0] == "literal":
-                            # curly brackets and cast needed
-                            return merge_tokens([tokens[0], ("punct", " = ", -1), ("helper", f"({type})", -1), open_curl, value, close_curl])[1]
-                        else:
+                else:
+                    type, depth = lookup
+                    if depth > 0:
+                        # plain pointer rebind/assignment — address, never encrypted
+                        if tokens[1][1] == "=":
+                            value = function_parse(tokens[2:], scope)
                             return merge_tokens([tokens[0], ("punct", " = ", -1), value])[1]
-                    elif tokens[1][1] == "++":
-                        return f"{tokens[0][1]} = addi_enc({tokens[0][1]}, 1)"
-                    elif tokens[1][1] == "--":
-                        return f"{tokens[0][1]} = subi_enc({tokens[0][1]}, 1)"
-                    elif tokens[1][1] == "+" and tokens[2][1] == "=":
-                        return merge_tokens([tokens[0], ("punct", " = ", -1), function_parse([tokens[0], ("punct", "+", -1), ("punct", "(", -1)] + tokens[3:] + [("punct", ")", -1)], scope)])[1]
-                    elif tokens[1][1] == "-" and tokens[2][1] == "=":
-                        return merge_tokens([tokens[0], ("punct", " = ", -1), function_parse([tokens[0], ("punct", "-", -1), ("punct", "(", -1)] + tokens[3:] + [("punct", ")", -1)], scope)])[1]
+                    elif type.startswith("funct_"):
+                        parsed = function_parse(tokens, scope)
+                        return parsed[1]
+                    elif type in ["int_enc", "uint_enc"]:
+                        # int_enc assignments
+                        if tokens[1][1] == "=":
+                            value = function_parse(tokens[2:], scope)
+                            if value[0] == "literal":
+                                # curly brackets and cast needed
+                                return merge_tokens([tokens[0], ("punct", " = ", -1), ("helper", f"({type})", -1), open_curl, value, close_curl])[1]
+                            else:
+                                return merge_tokens([tokens[0], ("punct", " = ", -1), value])[1]
+                        elif tokens[1][1] == "++":
+                            return f"{tokens[0][1]} = addi_enc({tokens[0][1]}, 1)"
+                        elif tokens[1][1] == "--":
+                            return f"{tokens[0][1]} = subi_enc({tokens[0][1]}, 1)"
+                        elif tokens[1][1] == "+" and tokens[2][1] == "=":
+                            return merge_tokens([tokens[0], ("punct", " = ", -1), function_parse([tokens[0], ("punct", "+", -1), ("punct", "(", -1)] + tokens[3:] + [("punct", ")", -1)], scope)])[1]
+                        elif tokens[1][1] == "-" and tokens[2][1] == "=":
+                            return merge_tokens([tokens[0], ("punct", " = ", -1), function_parse([tokens[0], ("punct", "-", -1), ("punct", "(", -1)] + tokens[3:] + [("punct", ")", -1)], scope)])[1]
     elif tokens[0][1] == "return":
         return merge_tokens([("ident", "return", -1), ("punct", " ", -1), function_parse(tokens[1:], scope)])[1]
 
@@ -610,7 +701,7 @@ def compute_scopes(tokens: List[Token]) -> List[int]:
     return scope_at
 
 
-def lookup_identifier(name: str, scope: int) -> Optional[str]:
+def lookup_identifier(name: str, scope: int) -> Optional[Tuple[str, int]]:
     """
     Returns the declared type of `name` as visible from `scope`,
     searching outward through enclosing scopes (innermost-first — this
@@ -619,11 +710,21 @@ def lookup_identifier(name: str, scope: int) -> Optional[str]:
     """
     s: Optional[int] = scope
     while s is not None:
-        for typ, nm, decl_scope in identifiers:
+        for typ, nm, decl_scope, depth in identifiers:
             if nm == name and decl_scope == s:
-                return typ
+                return (typ, depth)
         s = scope_parent.get(s)
     return None
+
+
+def count_pointer_depth(tokens: List[Token], idx: int) -> Tuple[int, int]:
+    """Counts consecutive '*' tokens starting at idx.
+    Returns (depth, first_index_after_the_stars)."""
+    depth = 0
+    while idx < len(tokens) and tokens[idx][1] == "*":
+        depth += 1
+        idx += 1
+    return depth, idx
 
 
 def find_ternary(tokens: List[Token]) -> Optional[Tuple[int, int]]:
@@ -682,16 +783,14 @@ def function_parse(tokens: List[Token], scope: int) -> Token:
     print(f"\nFunction parse: {tokens}")
 
     for i, token in enumerate(tokens[0:len(tokens) - 1]):
-        type = lookup_identifier(token[1], scope)
-        print(f"\ntype: {type}")
-        if not type == None and type.startswith("funct_"):
+        lookup = lookup_identifier(token[1], scope)
+        print(f"\ntype: {lookup}")
+        if lookup is not None and lookup[0].startswith("funct_"):
             function_call = extract_function_call(tokens[i:len(tokens)])
             args: List[List[Token]] = get_arguments(function_call)
             new_args: List[Token] = []
-
             for arg in args:
                 new_args.append(function_parse(arg, scope))
-
             return replace_args(function_call, new_args)
 
     return convert_expression(tokens, scope)
@@ -879,6 +978,10 @@ def main(pre_file: str, processed_file: str) -> None:
                 # verbatim on the next iteration's gap-fill
         except Exception as lucy:
             print(f"An unexpected error occurred: {lucy}")
+            if kind == 'stmt':
+                cursor = tokens[end_idx - 1][2] + len(tokens[end_idx - 1][1]) if end_idx > start_idx else cursor
+            else:
+                cursor = inner_end_pos if 'inner.0_end_pos' in dir() else cursor # type: ignore
 
     out_parts.append(src[cursor:])
 

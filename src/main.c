@@ -26,7 +26,10 @@ int main() {
     uint_enc no_neg = 3;
     uint_enc test = 2;
     const int_enc thirteen = 13;
-    int_enc * pointer1 = &x;
+    int_enc * p = &x;
+
+    result = *p + 1;
+    *p = result;
 
     // unary
     result = -result;
@@ -146,9 +149,6 @@ int main() {
 
     // cmov
     result = x ? x : y;
-
-    // useless statement
-    x;
 
     // nested function calls with complex expressions
     result = addDouble(addDouble(x - thirteen, y, x) + 1, addDouble(x, y << 2, x), thirteen);

@@ -28,7 +28,10 @@ int main() {
     uint_enc no_neg = {3};
     uint_enc test = {2};
     const int_enc thirteen = {13};
-    int_enc *, =, x;
+    int_enc *p = (&x);
+
+    result = addi_enc((*p), 1);
+    *p = result;
 
     // unary
     result = negate_enc(result);
@@ -148,9 +151,6 @@ int main() {
 
     // cmov
     result = cmov_enc(x, x, y);
-
-    // useless statement
-    x;
 
     // nested function calls with complex expressions
     result = addDouble(addDouble(sub_enc(x, thirteen),y,x),addDouble(x,slli_enc(y, 2),x),thirteen);

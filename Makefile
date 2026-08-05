@@ -1,9 +1,9 @@
 all: compile
 
 compile:
-	./riscv-llvm/build/bin/clang --target=riscv32-unknown-linux-gnu -O1 -c main.pp.c -o main.o
+	./riscv-llvm/build/bin/clang --target=riscv32-unknown-linux-gnu -O1 -g -c main.pp.c -o main.o
 	./riscv-llvm/build/bin/clang -target riscv32-unknown-unknown-elf -S -emit-llvm main.pp.c -o main.ll
-	./riscv-llvm/build/bin/llvm-objdump -d main.o > readable_riscv.txt
+	./riscv-llvm/build/bin/llvm-objdump -S -d main.o > readable_riscv.txt
 	./riscv-llvm/build/bin/llvm-objcopy -O binary --only-section=.text main.o raw_code.bin
 	python3 parse_bin.py > readable_machine_code.txt
 

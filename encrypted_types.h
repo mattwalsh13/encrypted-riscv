@@ -344,7 +344,7 @@ typedef struct { unsigned int v; } uint_enc;
         "Error: Source register argument must be an int_enc!"); \
     _Static_assert(__builtin_constant_p(imm), \
         "Error: Immediate argument must be a compile-time constant literal!"); \
-    _Static_assert((imm) >= -2048 && (imm) <= 2047, \
+    _Static_assert((imm) >= -2047 && (imm) <= 2048, \
         "Error: RISC-V I-type immediates must fit within a signed 12-bit range!"); \
     unsigned int __subi_enc_r = __builtin_riscv_addi_enc((rs1).v, (-(imm))); \
     DO_NOT_OPTIMIZE(__subi_enc_r); \
@@ -428,6 +428,8 @@ typedef struct { unsigned int v; } uint_enc;
         "Error: First argument to seti_enc must be a int_enc!"); \
     _Static_assert(__builtin_constant_p(imm), \
         "Error: Immediate argument must be a compile-time constant literal!"); \
+    _Static_assert((imm) >= -2047 && (imm) <= 2048, \
+        "Error: RISC-V I-type immediates must fit within a signed 12-bit range!"); \
     unsigned int __seti_enc_r = __builtin_riscv_sltiu_enc(__builtin_riscv_addi_enc((arg1).v, (-(imm))), 1); \
     DO_NOT_OPTIMIZE(__seti_enc_r); \
     _Generic((arg1), \
@@ -441,6 +443,8 @@ typedef struct { unsigned int v; } uint_enc;
         "Error: Second argument to iset_enc must be a int_enc!"); \
     _Static_assert(__builtin_constant_p(imm), \
         "Error: Immediate argument must be a compile-time constant literal!"); \
+    _Static_assert((imm) >= -2048 && (imm) <= 2047, \
+        "Error: RISC-V I-type immediates must fit within a signed 12-bit range!"); \
     unsigned int __iset_enc_r = __builtin_riscv_sltiu_enc(__builtin_riscv_addi_enc(__builtin_riscv_addi_enc(__builtin_riscv_xor_enc((arg1).v, (FULL_REGISTER).v), 1), (imm)), 1); \
     DO_NOT_OPTIMIZE(__iset_enc_r); \
     _Generic((arg1), \
@@ -477,10 +481,7 @@ typedef struct { unsigned int v; } uint_enc;
         "Error: First argument to sgt_enc must be a int_enc!"); \
     _Static_assert(__builtin_types_compatible_p(__typeof__(arg2), int_enc), \
         "Error: Second argument to sgt_enc must be a int_enc!"); \
-    unsigned int __sget_enc_r = __builtin_riscv_or_enc( \
-        __builtin_riscv_sltiu_enc(__builtin_riscv_slt_enc((arg1).v, (arg2).v), 1), \
-        __builtin_riscv_sltiu_enc(__builtin_riscv_sub_enc((arg1).v, (arg2).v), 1) \
-    ); \
+    unsigned int __sget_enc_r = __builtin_riscv_sltiu_enc(__builtin_riscv_slt_enc((arg1).v, (arg2).v), 1); \
     DO_NOT_OPTIMIZE(__sget_enc_r); \
     (int_enc){ __sget_enc_r }; \
 })
@@ -503,7 +504,7 @@ typedef struct { unsigned int v; } uint_enc;
         "Error: First argument to sgetu_enc must be a uint_enc!"); \
     _Static_assert(__builtin_types_compatible_p(__typeof__(arg2), uint_enc), \
         "Error: Second argument to sgetu_enc must be a uint_enc!"); \
-    unsigned int __sgetu_enc_r = __builtin_riscv_sltiu_enc(__builtin_riscv_slt_enc((arg1).v, (arg2).v), 1); \
+    unsigned int __sgetu_enc_r = __builtin_riscv_sltiu_enc(__builtin_riscv_sltu_enc((arg1).v, (arg2).v), 1); \
     DO_NOT_OPTIMIZE(__sgetu_enc_r); \
     (uint_enc){ __sgetu_enc_r }; \
 })
@@ -523,12 +524,12 @@ typedef struct { unsigned int v; } uint_enc;
         "Error: Source register argument must be an uint_enc!"); \
     _Static_assert(__builtin_constant_p(imm), \
         "Error: Immediate argument must be a compile-time constant literal!"); \
-    _Static_assert((imm) >= -2048 && (imm) <= 2047, \
+    _Static_assert((imm) >= -2047 && (imm) <= 2048, \
         "Error: RISC-V I-type immediates must fit within a signed 12-bit range!"); \
     unsigned int __sgtui_enc_r = __builtin_riscv_sltiu_enc( \
         __builtin_riscv_or_enc( \
             __builtin_riscv_sltiu_enc((rs1).v, (imm)), \
-            __builtin_riscv_sltiu_enc(__builtin_riscv_sub_enc((rs1).v, (imm)), 1) \
+            __builtin_riscv_sltiu_enc(__builtin_riscv_addi_enc((rs1).v, (-(imm))), 1) \
         ), 1); \
     DO_NOT_OPTIMIZE(__sgtui_enc_r); \
     (uint_enc){ __sgtui_enc_r }; \
@@ -540,8 +541,8 @@ typedef struct { unsigned int v; } uint_enc;
     _Static_assert(__builtin_types_compatible_p(__typeof__(arg2), int_enc) || __builtin_types_compatible_p(__typeof__(arg1), uint_enc), \
         "Error: Second argument to land_enc must be a int_enc!"); \
     unsigned int __land_enc_r = __builtin_riscv_and_enc( \
-        __builtin_riscv_sltiu_enc(__builtin_riscv_sltiu_enc((arg1).v, 0), 1), \
-        __builtin_riscv_sltiu_enc(__builtin_riscv_sltiu_enc((arg2).v, 0), 1) \
+        __builtin_riscv_sltiu_enc(__builtin_riscv_sltiu_enc((arg1).v, 1), 1), \
+        __builtin_riscv_sltiu_enc(__builtin_riscv_sltiu_enc((arg2).v, 1), 1) \
     ); \
     DO_NOT_OPTIMIZE(__land_enc_r); \
     _Generic((arg1), \
@@ -556,8 +557,8 @@ typedef struct { unsigned int v; } uint_enc;
     _Static_assert(__builtin_types_compatible_p(__typeof__(arg2), int_enc) || __builtin_types_compatible_p(__typeof__(arg1), uint_enc), \
         "Error: Second argument to lxor_enc must be a int_enc!"); \
     unsigned int __lxor_enc_r = __builtin_riscv_xor_enc( \
-        __builtin_riscv_sltiu_enc(__builtin_riscv_sltiu_enc((arg1).v, 0), 1), \
-        __builtin_riscv_sltiu_enc(__builtin_riscv_sltiu_enc((arg2).v, 0), 1) \
+        __builtin_riscv_sltiu_enc(__builtin_riscv_sltiu_enc((arg1).v, 1), 1), \
+        __builtin_riscv_sltiu_enc(__builtin_riscv_sltiu_enc((arg2).v, 1), 1) \
     ); \
     DO_NOT_OPTIMIZE(__lxor_enc_r); \
     _Generic((arg1), \
@@ -572,8 +573,8 @@ typedef struct { unsigned int v; } uint_enc;
     _Static_assert(__builtin_types_compatible_p(__typeof__(arg2), int_enc) || __builtin_types_compatible_p(__typeof__(arg1), uint_enc), \
         "Error: Second argument to lor_enc must be a int_enc!"); \
     unsigned int __lor_enc_r = __builtin_riscv_or_enc( \
-        __builtin_riscv_sltiu_enc(__builtin_riscv_sltiu_enc((arg1).v, 0), 1), \
-        __builtin_riscv_sltiu_enc(__builtin_riscv_sltiu_enc((arg2).v, 0), 1) \
+        __builtin_riscv_sltiu_enc(__builtin_riscv_sltiu_enc((arg1).v, 1), 1), \
+        __builtin_riscv_sltiu_enc(__builtin_riscv_sltiu_enc((arg2).v, 1), 1) \
     ); \
     DO_NOT_OPTIMIZE(__lor_enc_r); \
     _Generic((arg1), \
@@ -587,7 +588,7 @@ typedef struct { unsigned int v; } uint_enc;
         "Error: First argument to landi_enc must be a int_enc!"); \
     _Static_assert(__builtin_constant_p(imm), \
         "Error: Immediate argument must be a compile-time constant literal!"); \
-    unsigned int __landi_enc_r = __builtin_riscv_andi_enc(__builtin_riscv_sltiu_enc(__builtin_riscv_sltiu_enc((arg1).v, 0), 1), (imm) > 0); \
+    unsigned int __landi_enc_r = __builtin_riscv_andi_enc(__builtin_riscv_sltiu_enc(__builtin_riscv_sltiu_enc((arg1).v, 1), 1), (imm) > 0); \
     DO_NOT_OPTIMIZE(__landi_enc_r); \
     _Generic((arg1), \
         int_enc:  (int_enc){ __landi_enc_r }, \
@@ -600,7 +601,7 @@ typedef struct { unsigned int v; } uint_enc;
         "Error: First argument to lori_enc must be a int_enc!"); \
     _Static_assert(__builtin_constant_p(imm), \
         "Error: Immediate argument must be a compile-time constant literal!"); \
-    unsigned int __lori_enc_r = __builtin_riscv_ori_enc(__builtin_riscv_sltiu_enc(__builtin_riscv_sltiu_enc((arg1).v, 0), 1), (imm) > 0); \
+    unsigned int __lori_enc_r = __builtin_riscv_ori_enc(__builtin_riscv_sltiu_enc(__builtin_riscv_sltiu_enc((arg1).v, 1), 1), (imm) > 0); \
     DO_NOT_OPTIMIZE(__lori_enc_r); \
     _Generic((arg1), \
         int_enc:  (int_enc){ __lori_enc_r }, \
@@ -613,7 +614,7 @@ typedef struct { unsigned int v; } uint_enc;
         "Error: First argument to lxori_enc must be a int_enc!"); \
     _Static_assert(__builtin_constant_p(imm), \
         "Error: Immediate argument must be a compile-time constant literal!"); \
-    unsigned int __lxori_enc_r = __builtin_riscv_xori_enc(__builtin_riscv_sltiu_enc(__builtin_riscv_sltiu_enc((arg1).v, 0), 1), (imm) > 0); \
+    unsigned int __lxori_enc_r = __builtin_riscv_xori_enc(__builtin_riscv_sltiu_enc(__builtin_riscv_sltiu_enc((arg1).v, 1), 1), (imm) > 0); \
     DO_NOT_OPTIMIZE(__lxori_enc_r); \
     _Generic((arg1), \
         int_enc:  (int_enc){ __lxori_enc_r }, \
@@ -626,7 +627,7 @@ typedef struct { unsigned int v; } uint_enc;
         "Error: Source register argument must be an int_enc!"); \
     _Static_assert(__builtin_constant_p(imm), \
         "Error: Immediate argument must be a compile-time constant literal!"); \
-    _Static_assert((imm) >= -2048 && (imm) <= 2047, \
+    _Static_assert((imm) >= -2047 && (imm) <= 2048, \
         "Error: RISC-V I-type immediates must fit within a signed 12-bit range!"); \
     unsigned int __sleti_enc_r = __builtin_riscv_or_enc( \
         __builtin_riscv_slti_enc((rs1).v, (imm)), \
@@ -646,7 +647,7 @@ typedef struct { unsigned int v; } uint_enc;
     unsigned int __sgti_enc_r = __builtin_riscv_sltiu_enc( \
         __builtin_riscv_or_enc( \
             __builtin_riscv_slti_enc((rs1).v, imm), \
-            __builtin_riscv_sltiu_enc(__builtin_riscv_sub_enc((rs1).v, (imm)), 1) \
+            __builtin_riscv_sltiu_enc(__builtin_riscv_addi_enc((rs1).v, (-(imm))), 1) \
         ), 1); \
     DO_NOT_OPTIMIZE(__sgti_enc_r); \
     (int_enc){ __sgti_enc_r }; \
@@ -709,7 +710,7 @@ typedef struct { unsigned int v; } uint_enc;
     _Static_assert(__builtin_constant_p(imm), \
         "Error: Immediate argument must be a compile-time constant literal!"); \
     unsigned int __iland_enc_r = __builtin_riscv_andi_enc( \
-        __builtin_riscv_sltiu_enc(__builtin_riscv_sltiu_enc((rs1).v, 0), 1), \
+        __builtin_riscv_sltiu_enc(__builtin_riscv_sltiu_enc((rs1).v, 1), 1), \
         imm > 0 \
     ); \
     DO_NOT_OPTIMIZE(__iland_enc_r); \
@@ -725,7 +726,7 @@ typedef struct { unsigned int v; } uint_enc;
     _Static_assert(__builtin_constant_p(imm), \
         "Error: Immediate argument must be a compile-time constant literal!"); \
     unsigned int __ilor_enc_r = __builtin_riscv_ori_enc( \
-        __builtin_riscv_sltiu_enc(__builtin_riscv_sltiu_enc((rs1).v, 0), 1), \
+        __builtin_riscv_sltiu_enc(__builtin_riscv_sltiu_enc((rs1).v, 1), 1), \
         imm > 0 \
     ); \
     DO_NOT_OPTIMIZE(__ilor_enc_r); \
@@ -741,7 +742,7 @@ typedef struct { unsigned int v; } uint_enc;
     _Static_assert(__builtin_constant_p(imm), \
         "Error: Immediate argument must be a compile-time constant literal!"); \
     unsigned int __ilxor_enc_r = __builtin_riscv_xori_enc( \
-        __builtin_riscv_sltiu_enc(__builtin_riscv_sltiu_enc((rs1).v, 0), 1), \
+        __builtin_riscv_sltiu_enc(__builtin_riscv_sltiu_enc((rs1).v, 1), 1), \
         imm > 0 \
     ); \
     DO_NOT_OPTIMIZE(__ilxor_enc_r); \
@@ -788,7 +789,11 @@ typedef struct { unsigned int v; } uint_enc;
         "Error: First argument to islt_enc must be a int_enc!"); \
     _Static_assert(__builtin_constant_p(imm), \
         "Error: Immediate argument must be a compile-time constant literal!"); \
-    unsigned int __islt_enc_r = __builtin_riscv_sltiu_enc(__builtin_riscv_slti_enc((rs1).v, imm), 1); \
+    unsigned int __islt_enc_r = __builtin_riscv_sltiu_enc( \
+        __builtin_riscv_or_enc( \
+            __builtin_riscv_slti_enc((rs1).v, (imm)), \
+            __builtin_riscv_sltiu_enc(__builtin_riscv_addi_enc((rs1).v, (-(imm))), 1) \
+        ), 1); \
     DO_NOT_OPTIMIZE(__islt_enc_r); \
     (int_enc){ __islt_enc_r }; \
 })
@@ -798,10 +803,7 @@ typedef struct { unsigned int v; } uint_enc;
         "Error: First argument to islet_enc must be a int_enc!"); \
     _Static_assert(__builtin_constant_p(imm), \
         "Error: Immediate argument must be a compile-time constant literal!"); \
-    unsigned int __islet_enc_r = __builtin_riscv_or_enc( \
-        __builtin_riscv_sltiu_enc(__builtin_riscv_sltiu_enc(__builtin_riscv_slti_enc((rs1).v, imm), 1), 1), \
-        __builtin_riscv_sltiu_enc(__builtin_riscv_sltiu_enc(__builtin_riscv_sltiu_enc(__builtin_riscv_sub_enc((rs1).v, imm), 1), 0), 1) \
-    ); \
+    unsigned int __islet_enc_r = __builtin_riscv_sltiu_enc(__builtin_riscv_slti_enc((rs1).v, (imm)), 1); \
     DO_NOT_OPTIMIZE(__islet_enc_r); \
     (int_enc){ __islet_enc_r }; \
 })
@@ -836,7 +838,11 @@ typedef struct { unsigned int v; } uint_enc;
         "Error: First argument to isltu_enc must be a int_enc!"); \
     _Static_assert(__builtin_constant_p(imm), \
         "Error: Immediate argument must be a compile-time constant literal!"); \
-    unsigned int __isltu_enc_r = __builtin_riscv_sltiu_enc(__builtin_riscv_sltiu_enc((rs1).v, imm), 1); \
+    unsigned int __isltu_enc_r = __builtin_riscv_sltiu_enc( \
+        __builtin_riscv_or_enc( \
+            __builtin_riscv_sltiu_enc((rs1).v, (imm)), \
+            __builtin_riscv_sltiu_enc(__builtin_riscv_addi_enc((rs1).v, (-(imm))), 1) \
+        ), 1); \
     DO_NOT_OPTIMIZE(__isltu_enc_r); \
     (uint_enc){ __isltu_enc_r }; \
 })
@@ -846,10 +852,7 @@ typedef struct { unsigned int v; } uint_enc;
         "Error: First argument to isletu_enc must be a int_enc!"); \
     _Static_assert(__builtin_constant_p(imm), \
         "Error: Immediate argument must be a compile-time constant literal!"); \
-    unsigned int __isletu_enc_r = __builtin_riscv_or_enc( \
-        __builtin_riscv_sltiu_enc(__builtin_riscv_sltiu_enc(__builtin_riscv_sltiu_enc((rs1).v, imm), 1), 1), \
-        __builtin_riscv_sltiu_enc(__builtin_riscv_sltiu_enc(__builtin_riscv_sltiu_enc(__builtin_riscv_sub_enc((rs1).v, imm), 1), 0), 1) \
-    ); \
+    unsigned int __isletu_enc_r = __builtin_riscv_sltiu_enc(__builtin_riscv_sltiu_enc((rs1).v, (imm)), 1); \
     DO_NOT_OPTIMIZE(__isletu_enc_r); \
     (uint_enc){ __isletu_enc_r }; \
 })
@@ -872,8 +875,8 @@ typedef struct { unsigned int v; } uint_enc;
     _Static_assert(__builtin_constant_p(imm), \
         "Error: Immediate argument must be a compile-time constant literal!"); \
     unsigned int __isgetu_enc_r = __builtin_riscv_or_enc( \
-        __builtin_riscv_sltiu_enc(__builtin_riscv_sltiu_enc((rs1).v, (imm)), 1), \
-        __builtin_riscv_sltiu_enc(__builtin_riscv_sltiu_enc(__builtin_riscv_sub_enc((rs1).v, imm), 1), 1) \
+        __builtin_riscv_sltiu_enc((rs1).v, (imm)), \
+        __builtin_riscv_sltiu_enc(__builtin_riscv_addi_enc((rs1).v, (-(imm))), 1) \
     ); \
     DO_NOT_OPTIMIZE(__isgetu_enc_r); \
     (uint_enc){ __isgetu_enc_r }; \

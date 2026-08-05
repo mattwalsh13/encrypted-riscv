@@ -4,165 +4,267 @@ main.o:	file format elf32-littleriscv
 Disassembly of section .text:
 
 00000000 <addDouble>:
+;     int_enc c = add_enc(a, b);
        0: 00b5055b     	add_enc	a0, a0, a1
+;     return add_enc(c, b);
        4: 00b5055b     	add_enc	a0, a0, a1
+; }
        8: 8082         	ret
 
 0000000a <uaddDouble>:
+;     uint_enc c = add_enc(a, b);
        a: 00b5055b     	add_enc	a0, a0, a1
+;     return add_enc(c, b);
        e: 00b5055b     	add_enc	a0, a0, a1
+; }
       12: 8082         	ret
 
 00000014 <getSeven>:
+;     return seven;
       14: 451d         	li	a0, 0x7
       16: 8082         	ret
 
 00000018 <main>:
+; int main() {
       18: 1141         	addi	sp, sp, -0x10
       1a: c622         	sw	s0, 0xc(sp)
       1c: c426         	sw	s1, 0x8(sp)
-      1e: 000046db     	xor_enc	a3, zero, zero
-      22: 451d         	li	a0, 0x7
-      24: 45b5         	li	a1, 0xd
-      26: fff6870b     	addi_enc	a4, a3, -0x1
-      2a: 00e0465b     	xor_enc	a2, zero, a4
-      2e: 0016060b     	addi_enc	a2, a2, 0x1
-      32: 0016360b     	sltiu_enc	a2, a2, 0x1
-      36: 00a5f85b     	and_enc	a6, a1, a0
-      3a: 0005b78b     	sltiu_enc	a5, a1, 0x0
-      3e: 00e6465b     	xor_enc	a2, a2, a4
-      42: 0005388b     	sltiu_enc	a7, a0, 0x0
-      46: 0017b78b     	sltiu_enc	a5, a5, 0x1
-      4a: 0018b60b     	sltiu_enc	a2, a7, 0x1
-      4e: 00c7f85b     	and_enc	a6, a5, a2
-      52: 00a5e85b     	or_enc	a6, a1, a0
-      56: 00c7e85b     	or_enc	a6, a5, a2
-      5a: 00a5c85b     	xor_enc	a6, a1, a0
-      5e: 00c7c65b     	xor_enc	a2, a5, a2
-      62: 00a5965b     	sll_enc	a2, a1, a0
-      66: 00a5d65b     	srl_enc	a2, a1, a0
-      6a: 00a5865b     	add_enc	a2, a1, a0
-      6e: 40a5885b     	sub_enc	a6, a1, a0
-      72: 0018380b     	sltiu_enc	a6, a6, 0x1
-      76: 00a5a8db     	slt_enc	a7, a1, a0
-      7a: 0108e2db     	or_enc	t0, a7, a6
-      7e: 00b522db     	slt_enc	t0, a0, a1
-      82: 0018b88b     	sltiu_enc	a7, a7, 0x1
-      86: 0108e85b     	or_enc	a6, a7, a6
-      8a: 00d5f80b     	andi_enc	a6, a1, 0xd
-      8e: 0017fe8b     	andi_enc	t4, a5, 0x1
-      92: 00d5ef0b     	ori_enc	t5, a1, 0xd
-      96: 0017ef8b     	ori_enc	t6, a5, 0x1
-      9a: 00d5c40b     	xori_enc	s0, a1, 0xd
-      9e: 0017c78b     	xori_enc	a5, a5, 0x1
-      a2: 00d5988b     	slli_enc	a7, a1, 0xd
-      a6: 00d5d88b     	srli_enc	a7, a1, 0xd
-      aa: 00d5830b     	addi_enc	t1, a1, 0xd
-      ae: ff35888b     	addi_enc	a7, a1, -0xd
-      b2: 0018b28b     	sltiu_enc	t0, a7, 0x1
-      b6: 00d5a88b     	slti_enc	a7, a1, 0xd
-      ba: 40b583db     	sub_enc	t2, a1, a1
-      be: 0013be0b     	sltiu_enc	t3, t2, 0x1
-      c2: 0058e2db     	or_enc	t0, a7, t0
-      c6: 01c8e3db     	or_enc	t2, a7, t3
-      ca: 0013b38b     	sltiu_enc	t2, t2, 0x1
-      ce: 0018b38b     	sltiu_enc	t2, a7, 0x1
-      d2: 00d6c80b     	xori_enc	a6, a3, 0xd
-      d6: 00b81edb     	sll_enc	t4, a6, a1
-      da: 4789         	li	a5, 0x2
-      dc: 00b85edb     	srl_enc	t4, a6, a1
-      e0: 480d         	li	a6, 0x3
-      e2: 00e5cedb     	xor_enc	t4, a1, a4
-      e6: 001e830b     	addi_enc	t1, t4, 0x1
-      ea: 00d3030b     	addi_enc	t1, t1, 0xd
-      ee: 0013be8b     	sltiu_enc	t4, t2, 0x1
-      f2: 000e3e0b     	sltiu_enc	t3, t3, 0x0
-      f6: 0013330b     	sltiu_enc	t1, t1, 0x1
-      fa: 001e3e0b     	sltiu_enc	t3, t3, 0x1
-      fe: 01cee35b     	or_enc	t1, t4, t3
-     102: 00f873db     	and_enc	t2, a6, a5
-     106: 0008330b     	sltiu_enc	t1, a6, 0x0
-     10a: 0007b88b     	sltiu_enc	a7, a5, 0x0
-     10e: 0013328b     	sltiu_enc	t0, t1, 0x1
-     112: 0018b88b     	sltiu_enc	a7, a7, 0x1
-     116: 0112f35b     	and_enc	t1, t0, a7
-     11a: 00f8635b     	or_enc	t1, a6, a5
-     11e: 0112e35b     	or_enc	t1, t0, a7
-     122: 00f8435b     	xor_enc	t1, a6, a5
-     126: 0112c8db     	xor_enc	a7, t0, a7
-     12a: 00f818db     	sll_enc	a7, a6, a5
-     12e: 00f858db     	srl_enc	a7, a6, a5
-     132: 00f808db     	add_enc	a7, a6, a5
-     136: 40f8035b     	sub_enc	t1, a6, a5
-     13a: 0013330b     	sltiu_enc	t1, t1, 0x1
-     13e: 00f833db     	sltu_enc	t2, a6, a5
-     142: 0063e35b     	or_enc	t1, t2, t1
-     146: 0107b35b     	sltu_enc	t1, a5, a6
-     14a: 00f823db     	slt_enc	t2, a6, a5
-     14e: 0013b30b     	sltiu_enc	t1, t2, 0x1
-     152: 00387e0b     	andi_enc	t3, a6, 0x3
-     156: 0012fe8b     	andi_enc	t4, t0, 0x1
-     15a: 00386f0b     	ori_enc	t5, a6, 0x3
-     15e: 0012ef8b     	ori_enc	t6, t0, 0x1
-     162: 0038440b     	xori_enc	s0, a6, 0x3
-     166: 0012c48b     	xori_enc	s1, t0, 0x1
-     16a: 0038128b     	slli_enc	t0, a6, 0x3
-     16e: 0038528b     	srli_enc	t0, a6, 0x3
-     172: 0038038b     	addi_enc	t2, a6, 0x3
-     176: ffd8028b     	addi_enc	t0, a6, -0x3
-     17a: 0012b30b     	sltiu_enc	t1, t0, 0x1
-     17e: 0038328b     	sltiu_enc	t0, a6, 0x3
-     182: 0062e35b     	or_enc	t1, t0, t1
-     186: 0012b30b     	sltiu_enc	t1, t0, 0x1
-     18a: 0036ce0b     	xori_enc	t3, a3, 0x3
-     18e: 010e1edb     	sll_enc	t4, t3, a6
-     192: 41080f5b     	sub_enc	t5, a6, a6
-     196: 010e5e5b     	srl_enc	t3, t3, a6
-     19a: 00e84edb     	xor_enc	t4, a6, a4
-     19e: 001f3e0b     	sltiu_enc	t3, t5, 0x1
-     1a2: 001e838b     	addi_enc	t2, t4, 0x1
-     1a6: 0033838b     	addi_enc	t2, t2, 0x3
-     1aa: 00133e8b     	sltiu_enc	t4, t1, 0x1
-     1ae: 000e3f0b     	sltiu_enc	t5, t3, 0x0
-     1b2: 0013b68b     	sltiu_enc	a3, t2, 0x1
-     1b6: 001f370b     	sltiu_enc	a4, t5, 0x1
-     1ba: 00eee6db     	or_enc	a3, t4, a4
-     1be: 001e370b     	sltiu_enc	a4, t3, 0x1
-     1c2: 00e366db     	or_enc	a3, t1, a4
-     1c6: 40b5075b     	sub_enc	a4, a0, a1
-     1ca: 0025168b     	slli_enc	a3, a0, 0x2
-     1ce: fff5028b     	addi_enc	t0, a0, -0x1
-     1d2: 40a6075b     	sub_enc	a4, a2, a0
-     1d6: 0017060b     	addi_enc	a2, a4, 0x1
-     1da: fff6070b     	addi_enc	a4, a2, -0x1
-     1de: 40b705db     	sub_enc	a1, a4, a1
-     1e2: 00a5865b     	add_enc	a2, a1, a0
-     1e6: 00a605db     	add_enc	a1, a2, a0
-     1ea: 0002b60b     	sltiu_enc	a2, t0, 0x0
-     1ee: 00d7035b     	add_enc	t1, a4, a3
-     1f2: 00d306db     	add_enc	a3, t1, a3
-     1f6: 00d585db     	add_enc	a1, a1, a3
-     1fa: 00d586db     	add_enc	a3, a1, a3
-     1fe: 00a705db     	add_enc	a1, a4, a0
-     202: 00e596db     	sll_enc	a3, a1, a4
-     206: 0006b70b     	sltiu_enc	a4, a3, 0x0
-     20a: 0017368b     	sltiu_enc	a3, a4, 0x1
-     20e: 0016360b     	sltiu_enc	a2, a2, 0x1
-     212: 00c6f65b     	and_enc	a2, a3, a2
-     216: 00a6065b     	add_enc	a2, a2, a0
-     21a: 00a6065b     	add_enc	a2, a2, a0
-     21e: 00a6065b     	add_enc	a2, a2, a0
-     222: 00a6065b     	add_enc	a2, a2, a0
-     226: 00f8865b     	add_enc	a2, a7, a5
-     22a: 00f606db     	add_enc	a3, a2, a5
-     22e: 00f686db     	add_enc	a3, a3, a5
-     232: 010786db     	add_enc	a3, a5, a6
-     236: 010686db     	add_enc	a3, a3, a6
-     23a: 00d6065b     	add_enc	a2, a2, a3
-     23e: 00d6065b     	add_enc	a2, a2, a3
-     242: 00a5855b     	add_enc	a0, a1, a0
-     246: 4501         	li	a0, 0x0
-     248: 4432         	lw	s0, 0xc(sp)
-     24a: 44a2         	lw	s1, 0x8(sp)
-     24c: 0141         	addi	sp, sp, 0x10
-     24e: 8082         	ret
+      1e: c24a         	sw	s2, 0x4(sp)
+      20: c04e         	sw	s3, 0x0(sp)
+;     result = addi_enc((*p), 1);
+      22: 45b5         	li	a1, 0xd
+;     result = negate_enc(result);
+      24: 0000475b     	xor_enc	a4, zero, zero
+;     result = and_enc(x, y);
+      28: 451d         	li	a0, 0x7
+;     result = addi_enc((*p), 1);
+      2a: 0015860b     	addi_enc	a2, a1, 0x1
+;     result = negate_enc(result);
+      2e: fff7078b     	addi_enc	a5, a4, -0x1
+      32: 00f646db     	xor_enc	a3, a2, a5
+      36: 0016880b     	addi_enc	a6, a3, 0x1
+;     result = lnot_enc(result);
+      3a: 0018368b     	sltiu_enc	a3, a6, 0x1
+;     result = land_enc(x, y);
+      3e: 0015328b     	sltiu_enc	t0, a0, 0x1
+;     result = and_enc(x, y);
+      42: 00a6735b     	and_enc	t1, a2, a0
+;     result = bnot_enc(result);
+      46: 00f6c6db     	xor_enc	a3, a3, a5
+;     result = land_enc(x, y);
+      4a: 0016388b     	sltiu_enc	a7, a2, 0x1
+      4e: 0018b88b     	sltiu_enc	a7, a7, 0x1
+      52: 0012b68b     	sltiu_enc	a3, t0, 0x1
+      56: 00d8f2db     	and_enc	t0, a7, a3
+;     result = or_enc(x, y);
+      5a: 00a662db     	or_enc	t0, a2, a0
+;     result = lor_enc(x, y);
+      5e: 00d8e2db     	or_enc	t0, a7, a3
+;     result = xor_enc(x, y);
+      62: 00a642db     	xor_enc	t0, a2, a0
+;     result = lxor_enc(x, y);
+      66: 00d8c6db     	xor_enc	a3, a7, a3
+;     result = sll_enc(x, y);
+      6a: 00a616db     	sll_enc	a3, a2, a0
+;     result = srl_enc(x, y);
+      6e: 00a656db     	srl_enc	a3, a2, a0
+;     result = add_enc(x, y);
+      72: 00a606db     	add_enc	a3, a2, a0
+;     result = sub_enc(x, y);
+      76: 40a602db     	sub_enc	t0, a2, a0
+;     result = set_enc(x, y);
+      7a: 0012b28b     	sltiu_enc	t0, t0, 0x1
+;     result = slt_enc(x, y);
+      7e: 00a6235b     	slt_enc	t1, a2, a0
+;     result = slet_enc(x, y);
+      82: 005362db     	or_enc	t0, t1, t0
+;     result = sgt_enc(x, y);
+      86: 00c522db     	slt_enc	t0, a0, a2
+;     result = sget_enc(x, y);
+      8a: 0013328b     	sltiu_enc	t0, t1, 0x1
+;     result = andi_enc(x, 13);
+      8e: 00d6730b     	andi_enc	t1, a2, 0xd
+;     result = landi_enc(x, 13);
+      92: 0018fe0b     	andi_enc	t3, a7, 0x1
+;     result = ori_enc(x, 13);
+      96: 00d66e8b     	ori_enc	t4, a2, 0xd
+;     result = lori_enc(x, 13);
+      9a: 0018ef0b     	ori_enc	t5, a7, 0x1
+;     result = xori_enc(x, 13);
+      9e: 00d64f8b     	xori_enc	t6, a2, 0xd
+;     result = lxori_enc(x, 13);
+      a2: 0018c88b     	xori_enc	a7, a7, 0x1
+;     result = slli_enc(x, 13);
+      a6: 00d6128b     	slli_enc	t0, a2, 0xd
+;     result = srli_enc(x, 13);
+      aa: 00d6528b     	srli_enc	t0, a2, 0xd
+;     result = addi_enc(x, 13);
+      ae: 00d6040b     	addi_enc	s0, a2, 0xd
+;     result = subi_enc(x, 13);
+      b2: ff36028b     	addi_enc	t0, a2, -0xd
+;     result = seti_enc(x, 13);
+      b6: 0012b38b     	sltiu_enc	t2, t0, 0x1
+;     result = slti_enc(x, 13);
+      ba: 00d6228b     	slti_enc	t0, a2, 0xd
+;     result = sleti_enc(x, 13);
+      be: 0072e3db     	or_enc	t2, t0, t2
+;     result = sgti_enc(x, 13);
+      c2: 0013b48b     	sltiu_enc	s1, t2, 0x1
+;     result = sgeti_enc(x, 13);
+      c6: 0012b90b     	sltiu_enc	s2, t0, 0x1
+;     result = isll_enc(13, x);
+      ca: 00d7430b     	xori_enc	t1, a4, 0xd
+      ce: 00c318db     	sll_enc	a7, t1, a2
+;     result = isrl_enc(13, x);
+      d2: 00c358db     	srl_enc	a7, t1, a2
+;     result = isub_enc(13, x);
+      d6: 00d8030b     	addi_enc	t1, a6, 0xd
+;     uresult = and_enc(no_neg, test);
+      da: 4889         	li	a7, 0x2
+      dc: 480d         	li	a6, 0x3
+;     result = iset_enc(13, x);
+      de: 0013330b     	sltiu_enc	t1, t1, 0x1
+;     uresult = and_enc(no_neg, test);
+      e2: 01187e5b     	and_enc	t3, a6, a7
+;     uresult = land_enc(no_neg, test);
+      e6: 0018330b     	sltiu_enc	t1, a6, 0x1
+      ea: 0018be8b     	sltiu_enc	t4, a7, 0x1
+      ee: 0013330b     	sltiu_enc	t1, t1, 0x1
+      f2: 001eb28b     	sltiu_enc	t0, t4, 0x1
+      f6: 005373db     	and_enc	t2, t1, t0
+;     uresult = or_enc(no_neg, test);
+      fa: 01186e5b     	or_enc	t3, a6, a7
+;     uresult = lor_enc(no_neg, test);
+      fe: 005363db     	or_enc	t2, t1, t0
+;     uresult = xor_enc(no_neg, test);
+     102: 01184e5b     	xor_enc	t3, a6, a7
+;     uresult = lxor_enc(no_neg, test);
+     106: 005342db     	xor_enc	t0, t1, t0
+;     uresult = sll_enc(no_neg, test);
+     10a: 011813db     	sll_enc	t2, a6, a7
+;     uresult = srl_enc(no_neg, test);
+     10e: 01185e5b     	srl_enc	t3, a6, a7
+;     uresult = add_enc(no_neg, test);
+     112: 011802db     	add_enc	t0, a6, a7
+;     uresult = sub_enc(no_neg, test);
+     116: 411803db     	sub_enc	t2, a6, a7
+;     uresult = set_enc(no_neg, test);
+     11a: 0013be0b     	sltiu_enc	t3, t2, 0x1
+;     uresult = sltu_enc(no_neg, test);
+     11e: 011833db     	sltu_enc	t2, a6, a7
+;     uresult = sletu_enc(no_neg, test);
+     122: 01c3ee5b     	or_enc	t3, t2, t3
+;     uresult = sgtu_enc(no_neg, test);
+     126: 0108bedb     	sltu_enc	t4, a7, a6
+;     uresult = sgetu_enc(no_neg, test);
+     12a: 0013be0b     	sltiu_enc	t3, t2, 0x1
+;     uresult = andi_enc(no_neg, 3);
+     12e: 0038738b     	andi_enc	t2, a6, 0x3
+;     uresult = landi_enc(no_neg, 3);
+     132: 00137e0b     	andi_enc	t3, t1, 0x1
+;     uresult = ori_enc(no_neg, 3);
+     136: 00386e8b     	ori_enc	t4, a6, 0x3
+;     uresult = lori_enc(no_neg, 3);
+     13a: 00136f0b     	ori_enc	t5, t1, 0x1
+;     uresult = xori_enc(no_neg, 3);
+     13e: 00384f8b     	xori_enc	t6, a6, 0x3
+;     uresult = lxori_enc(no_neg, 3);
+     142: 0013440b     	xori_enc	s0, t1, 0x1
+;     uresult = slli_enc(no_neg, 3);
+     146: 0038130b     	slli_enc	t1, a6, 0x3
+;     uresult = srli_enc(no_neg, 3);
+     14a: 0038548b     	srli_enc	s1, a6, 0x3
+;     uresult = addi_enc(no_neg, 3);
+     14e: 0038090b     	addi_enc	s2, a6, 0x3
+;     uresult = subi_enc(no_neg, 3);
+     152: ffd8030b     	addi_enc	t1, a6, -0x3
+;     uresult = seti_enc(no_neg, 3);
+     156: 0013348b     	sltiu_enc	s1, t1, 0x1
+;     uresult = sltiu_enc(no_neg, 3);
+     15a: 0038398b     	sltiu_enc	s3, a6, 0x3
+;     uresult = sletiu_enc(no_neg, 3);
+     15e: 0099e35b     	or_enc	t1, s3, s1
+;     uresult = sgtiu_enc(no_neg, 3);
+     162: 0019b48b     	sltiu_enc	s1, s3, 0x1
+;     uresult = isll_enc(3, no_neg);
+     166: 0037438b     	xori_enc	t2, a4, 0x3
+     16a: 01039e5b     	sll_enc	t3, t2, a6
+;     uresult = isrl_enc(3, no_neg);
+     16e: 0103d3db     	srl_enc	t2, t2, a6
+;     uresult = isub_enc(3, no_neg);
+     172: 00f843db     	xor_enc	t2, a6, a5
+     176: 0013838b     	addi_enc	t2, t2, 0x1
+     17a: 0033838b     	addi_enc	t2, t2, 0x3
+;     uresult = iset_enc(3, no_neg);
+     17e: 0013b70b     	sltiu_enc	a4, t2, 0x1
+;     uresult = isltu_enc(3, no_neg);
+     182: 0013378b     	sltiu_enc	a5, t1, 0x1
+;     result = addDouble(addDouble(sub_enc(x, thirteen),y,x),addDouble(x,slli_enc(y, 2),x),thirteen);
+     186: 0025170b     	slli_enc	a4, a0, 0x2
+;     int_enc a = add_enc(x, y), b = sub_enc(y, x);
+     18a: 40c5065b     	sub_enc	a2, a0, a2
+;     result = addDouble(addDouble(land_enc(sll_enc(add_enc(x, y), x), subi_enc(y, 1)),y,x),y,x);
+     18e: fff5078b     	addi_enc	a5, a0, -0x1
+;     x = sub_enc(x, y);
+     192: 40a6865b     	sub_enc	a2, a3, a0
+;     x = addi_enc(x, 1);
+     196: 0016068b     	addi_enc	a3, a2, 0x1
+;     x = subi_enc(x, 1);
+     19a: fff6860b     	addi_enc	a2, a3, -0x1
+;     result = cmov_enc(x, x, y);
+     19e: 56c656ab     	cmov_enc	a3, a0, a2, a2
+;     result = addDouble(addDouble(sub_enc(x, thirteen),y,x),addDouble(x,slli_enc(y, 2),x),thirteen);
+     1a2: 40b605db     	sub_enc	a1, a2, a1
+;     int_enc c = add_enc(a, b);
+     1a6: 00a586db     	add_enc	a3, a1, a0
+;     return add_enc(c, b);
+     1aa: 00a685db     	add_enc	a1, a3, a0
+;     result = addDouble(addDouble(land_enc(sll_enc(add_enc(x, y), x), subi_enc(y, 1)),y,x),y,x);
+     1ae: 0017b68b     	sltiu_enc	a3, a5, 0x1
+;     int_enc c = add_enc(a, b);
+     1b2: 00e6035b     	add_enc	t1, a2, a4
+;     return add_enc(c, b);
+     1b6: 00e3075b     	add_enc	a4, t1, a4
+;     int_enc c = add_enc(a, b);
+     1ba: 00e585db     	add_enc	a1, a1, a4
+;     return add_enc(c, b);
+     1be: 00e5875b     	add_enc	a4, a1, a4
+;     result = addDouble(addDouble(land_enc(sll_enc(add_enc(x, y), x), subi_enc(y, 1)),y,x),y,x);
+     1c2: 00a605db     	add_enc	a1, a2, a0
+     1c6: 00c5965b     	sll_enc	a2, a1, a2
+     1ca: 0016370b     	sltiu_enc	a4, a2, 0x1
+     1ce: 0017360b     	sltiu_enc	a2, a4, 0x1
+     1d2: 0016b68b     	sltiu_enc	a3, a3, 0x1
+     1d6: 00d6765b     	and_enc	a2, a2, a3
+;     int_enc c = add_enc(a, b);
+     1da: 00a6065b     	add_enc	a2, a2, a0
+;     return add_enc(c, b);
+     1de: 00a6065b     	add_enc	a2, a2, a0
+;     int_enc c = add_enc(a, b);
+     1e2: 00a6065b     	add_enc	a2, a2, a0
+;     return add_enc(c, b);
+     1e6: 00a6065b     	add_enc	a2, a2, a0
+;     return add_enc(c, b);
+     1ea: 0112865b     	add_enc	a2, t0, a7
+;     uint_enc c = add_enc(a, b);
+     1ee: 011606db     	add_enc	a3, a2, a7
+;     return add_enc(c, b);
+     1f2: 011686db     	add_enc	a3, a3, a7
+;     uint_enc c = add_enc(a, b);
+     1f6: 010886db     	add_enc	a3, a7, a6
+;     return add_enc(c, b);
+     1fa: 010686db     	add_enc	a3, a3, a6
+;     uint_enc c = add_enc(a, b);
+     1fe: 00d6065b     	add_enc	a2, a2, a3
+;     return add_enc(c, b);
+     202: 00d6065b     	add_enc	a2, a2, a3
+;     return add_enc(c, b);
+     206: 00a5855b     	add_enc	a0, a1, a0
+;     return 0;
+     20a: 4501         	li	a0, 0x0
+     20c: 4432         	lw	s0, 0xc(sp)
+     20e: 44a2         	lw	s1, 0x8(sp)
+     210: 4912         	lw	s2, 0x4(sp)
+     212: 4982         	lw	s3, 0x0(sp)
+     214: 0141         	addi	sp, sp, 0x10
+     216: 8082         	ret
