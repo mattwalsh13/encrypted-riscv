@@ -11,3 +11,4 @@ riscv-llvm/**
 !riscv-llvm/clang/lib/CodeGen/TargetBuiltins/RISCV.cpp
 !riscv-llvm/llvm/lib/Target/RISCV/RISCVInstrInfoEncrypted.td
 !riscv-llvm/llvm/lib/Target/RISCV/RISCVInstrInfo.td
+!riscv-llvm/build/CMakeCache.txt

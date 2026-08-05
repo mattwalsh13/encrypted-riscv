@@ -14,8 +14,5 @@ clean:
 	rm readable_machine_code.txt
 	rm readable_riscv.txt
 
-clang:
-	cd ./riscv-llvm/build && ninja -j4 clang lld
-
 preprocess:
 	python3 preprocess.py src/main.c main.pp.c
