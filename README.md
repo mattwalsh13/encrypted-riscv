@@ -85,6 +85,13 @@ You can use the example file `main.c` to test compiling. The MakeFile provides t
 
 You can also have `main.c` be automatically preprocessed (if you use VSCode) by going to `File`->`Open Workspace from File` and then clicking on `encrypted-riscv/preprocess.code-workspace`. Doing this will automatically preprocess your C code. You can view the preprocessed code by viewing `src/main.pp.c`.
 
+### Restrictions on Programming
+
+The current implementation has a few limitations:
+
+- Any operations that mix immediate values and encrypted integers should not contain immediate values that surpass the 12-bit limit
+- You may not declare and initialize variables on the same line. You may declare multiple int_encs on the same line or initialize multiple int_encs on the same line, but you cannot mix the two on the same line.
+
 ## File Directory
 
 The modified compiler files live in `riscv-llvm` and are what are needed to compile C code.
