@@ -5,7 +5,6 @@ from typing import List, Tuple, Iterator, Dict, Optional
 
 # A Token is (kind: str, text: str, pos: int)
 #   kind = one of: 'ident', 'number', 'string', 'char', 'punct'
-#          (comment/preproc tokens are matched but discarded, never returned)
 #   text = the exact substring matched, e.g. 'x', '+', '"hello"', '123'
 #   pos  = character offset into the original src string where this token starts
 Token = Tuple[str, str, int]
@@ -29,11 +28,10 @@ TOKEN_RE = re.compile(r'''
 def tokenize(src: str) -> List[Token]:
     """
     Input:
-        src: str — the full contents of a .c file, read as one string
-             (e.g. via open(path).read()). NOT pre-split into lines.
+        src: str: the full contents of a .c file, read as one string
 
     Output:
-        List[Token] — a flat, ordered list of (kind, text, pos) tuples,
+        List[Token]: a flat, ordered list of (kind, text, pos) tuples,
         one per token found in src, in the order they appear.
         Comments and preprocessor directive lines are silently dropped
         (never appear in the returned list) — they are matched by the
@@ -41,8 +39,7 @@ def tokenize(src: str) -> List[Token]:
         misread as code.
 
     Example:
-        tokenize("result = x + y;")
-        ->
+        tokenize("result = x + y;") ->
         [
             ('ident',  'result', 0),
             ('punct',  '=',      7),
@@ -52,6 +49,7 @@ def tokenize(src: str) -> List[Token]:
             ('punct',  ';',      14),
         ]
     """
+
     tokens: List[Token] = []
     for m in TOKEN_RE.finditer(src):
         kind = m.lastgroup
@@ -119,6 +117,7 @@ def find_paren_contents(tokens: List[Token], start_idx: int, end_idx: int) -> Op
     is everything inside the parens, no parens included).
     Returns None if there's no '(' in the span (e.g. a bare "else" or "do").
     """
+
     open_idx = None
     for j in range(start_idx, end_idx):
         if tokens[j][1] == '(':
@@ -177,10 +176,7 @@ UNARY_OP_LOOKUP = {
 
 ENCRYPTED_TYPES = {"int_enc", "uint_enc"}
 
-# Binary ISP/ICP unchanged from before, EXCEPT unary-capable tokens ("-", "!",
-# "~") now only represent their BINARY meaning here. Their unary meaning gets
-# a separate "u"-prefixed pseudo-token below, reusing the same right-assoc
-# precedence style your original ++/--/!/~ entries already used (ISP < ICP).
+# Binary ISP/ICP unchanged from before, EXCEPT unary-capable tokens
 ISP = { # type: ignore
     ")": None,
     "=": 1, "+=": 1, "-=": 1, "*=": 1, "/=": 1, "%=": 1,
@@ -248,9 +244,8 @@ def convert_expression(tokens: List[Token], scope: int) -> Token:
             new_tokens.append(token)
     tokens = new_tokens
 
-    # --- Disambiguate unary vs. binary '-', '!', '~' before the shunting-yard pass ---
-    # A '-'/'!'/'~' is unary if it's the first token, or the previous token was
-    # an operator/'(' /',' (i.e. we're at the START of an operand, not between two).
+    # Disambiguate unary vs. binary -, !, ~
+    # An operator is unary if it's the first token, or the previous token was an operator
     disambiguated: List[Token] = []
     prev_text: Optional[str] = None
     for token in tokens:
@@ -321,7 +316,7 @@ def convert_expression(tokens: List[Token], scope: int) -> Token:
             continue
 
         if token[1] in UNARY_OP_LOOKUP:
-            # Unary: consume exactly ONE operand.
+            # Unary
             fn_name = UNARY_OP_LOOKUP[token[1]]
             oper_type = operands[-1][0]
 
@@ -330,7 +325,7 @@ def convert_expression(tokens: List[Token], scope: int) -> Token:
                 return ("error", "// ERROR: VARIABLE TYPE NOT FOUND", -1)
 
             if oper_type == "literal":
-                # Fold immediately: e.g. "u-" on a literal -> negated literal.
+                # Fold immediately: ex. u- on a literal = negated literal.
                 simp_expr = merge_tokens([open_paren, ("punct", token[1][-1] if len(token[1]) > 1 else token[1], -1), operands.pop(), close_paren])
                 simp_expr = ("imm", simp_expr[1], simp_expr[2])
             else:
@@ -348,7 +343,7 @@ def convert_expression(tokens: List[Token], scope: int) -> Token:
             is_ptr_1 = oper_1_type.startswith("ptr|")
             is_ptr_2 = oper_2_type.startswith("ptr|")
             if is_ptr_1 or is_ptr_2:
-                # pointer arithmetic / comparison plain C, never _enc
+                # pointer arithmetic/comparison
                 merged = merge_tokens([open_paren, operands.pop(-2), token, operands.pop(), close_paren])
                 result_type = oper_1_type if is_ptr_1 else oper_2_type
                 operands.append((result_type, merged[1], merged[2]))
@@ -360,7 +355,7 @@ def convert_expression(tokens: List[Token], scope: int) -> Token:
             elif not oper_1_type == "literal" and not oper_2_type == "literal" and oper_1_type != oper_2_type:
                 print("\t\t\tWARNING: Different encrypted types mixed in the same operation.")
 
-            # Comparisons on uint_enc use the unsigned variant of the op name.
+            # Comparisons on uint_enc use the unsigned variant
             if token[1] in ("<", ">", "<=", ">=") and (oper_1_type == "uint_enc" or oper_2_type == "uint_enc"):
                 unsigned = "u"
 
@@ -421,6 +416,7 @@ Don't like these:
 Multi-declarations
 Multi-initializations
 """
+
 # Each scope is identified by a unique int. scope_parent[s] = the scope
 # that directly encloses s (or None for the global/file scope).
 scope_parent: Dict[int, Optional[int]] = {0: None}   # 0 = global scope
@@ -442,7 +438,7 @@ def log_identifiers(tokens: List[Token], scope: int, funct_scope: int) -> None:
         after = tokens[after_idx][1] if after_idx < len(tokens) else None
 
         if after == "=":
-            i = 1  # right after base_type, not name_idx — so declarator #1's stars are still visible
+            i = 1
             expect_declarator = True
             depth_track = 0
             while i < len(tokens):
@@ -452,7 +448,7 @@ def log_identifiers(tokens: List[Token], scope: int, funct_scope: int) -> None:
                 elif tok[1] == ")":
                     depth_track -= 1
                 elif depth_track == 0 and tok[1] == ",":
-                    expect_declarator = True   # <-- also needed: reset for the NEXT declarator
+                    expect_declarator = True
                     i += 1
                     continue
                 elif depth_track == 0 and expect_declarator:
@@ -483,7 +479,7 @@ def log_identifiers(tokens: List[Token], scope: int, funct_scope: int) -> None:
                 i = p_name_idx + 1
 
         else:
-            # plain declaration(s), no initializer
+            # plain declaration
             identifiers.append((base_type, tokens[name_idx][1], scope, ptr_depth))
             i = after_idx
             while i < len(tokens):
@@ -500,16 +496,16 @@ def log_identifiers(tokens: List[Token], scope: int, funct_scope: int) -> None:
 C_VARIABLE_KEYWORDS = [
     # Basic Data Types
     "char", "int", "float", "double", "void", "_Bool", "_Complex", "_Imaginary", "int_enc", "uint_enc",
-    
+
     # Type Modifiers
     "signed", "unsigned", "short", "long",
-    
+
     # Type Qualifiers
     "const", "volatile", "restrict",
-    
+
     # Storage Class Specifiers
     "auto", "register", "static", "extern", "typedef", "_Thread_local",
-    
+
     # User-Defined Type Structuring
     "struct", "union", "enum"
 ]
@@ -679,9 +675,10 @@ def compute_scopes(tokens: List[Token]) -> List[int]:
     scope ID that tokens[i] lexically belongs to. Also populates the
     module-level scope_parent dict as a side effect.
     """
+
     global next_scope_id
     scope_at: List[int] = []
-    scope_stack: List[int] = [0]   # start in global scope (id 0)
+    scope_stack: List[int] = [0]   # start in global scope (0)
 
     for _, text, _ in tokens:
         if text == '{':
@@ -689,10 +686,10 @@ def compute_scopes(tokens: List[Token]) -> List[int]:
             next_scope_id += 1
             scope_parent[new_scope] = scope_stack[-1]
             scope_stack.append(new_scope)
-            scope_at.append(new_scope)   # the '{' itself belongs to the new scope
+            scope_at.append(new_scope)   # the { belongs to the new scope
             continue
         elif text == '}':
-            scope_at.append(scope_stack[-1])  # '}' belongs to the scope it's closing
+            scope_at.append(scope_stack[-1])  # } belongs to the scope it's closing
             if len(scope_stack) > 1:
                 scope_stack.pop()
             continue
@@ -703,11 +700,9 @@ def compute_scopes(tokens: List[Token]) -> List[int]:
 
 def lookup_identifier(name: str, scope: int) -> Optional[Tuple[str, int]]:
     """
-    Returns the declared type of `name` as visible from `scope`,
-    searching outward through enclosing scopes (innermost-first — this
-    is what makes shadowing work: an inner declaration is found before
-    an outer one with the same name).
+    Returns the declared type of name as visible from scope, searching outward through enclosing scopes
     """
+
     s: Optional[int] = scope
     while s is not None:
         for typ, nm, decl_scope, depth in identifiers:
@@ -718,8 +713,11 @@ def lookup_identifier(name: str, scope: int) -> Optional[Tuple[str, int]]:
 
 
 def count_pointer_depth(tokens: List[Token], idx: int) -> Tuple[int, int]:
-    """Counts consecutive '*' tokens starting at idx.
-    Returns (depth, first_index_after_the_stars)."""
+    """
+    Counts consecutive * tokens starting at idx.
+    Returns (depth, first_index_after_the_stars).
+    """
+
     depth = 0
     while idx < len(tokens) and tokens[idx][1] == "*":
         depth += 1
@@ -728,8 +726,11 @@ def count_pointer_depth(tokens: List[Token], idx: int) -> Tuple[int, int]:
 
 
 def find_ternary(tokens: List[Token]) -> Optional[Tuple[int, int]]:
-    """Finds the outermost top-level '?' and its matching ':' in tokens.
-    Returns (q_idx, c_idx) or None if there's no top-level ternary."""
+    """
+    Finds the outermost top-level ? and its matching : in tokens.
+    Returns (q_idx, c_idx) or None if there's no top-level ternary.
+    """
+
     depth = 0
     q_idx = None
     nested = 0
@@ -756,6 +757,7 @@ def function_parse(tokens: List[Token], scope: int) -> Token:
     """
     Takes in a function call in the form of tokens. Breaks down into the arguments, and converts said arguments (handle nested calls)
     """
+
     ternary = find_ternary(tokens)
     if ternary is not None:
         q_idx, c_idx = ternary
@@ -945,7 +947,6 @@ def main(pre_file: str, processed_file: str) -> None:
 
         try:
             if kind == 'stmt':
-                # unchanged from before: whole statement goes to rewrite_line
                 stmt_tokens = tokens[start_idx:end_idx]
                 stmt_start_pos = stmt_tokens[0][2]
                 last_tok = stmt_tokens[-1]
@@ -958,7 +959,7 @@ def main(pre_file: str, processed_file: str) -> None:
             else:  # kind == 'header'
                 paren_range = find_paren_contents(tokens, start_idx, end_idx)
                 if paren_range is None:
-                    # e.g. bare "else" / "do" — nothing to rewrite, copy verbatim
+                    # nothing to rewrite, copy
                     continue
                 inner_start, inner_end = paren_range
                 inner_tokens = tokens[inner_start:inner_end]
@@ -969,13 +970,13 @@ def main(pre_file: str, processed_file: str) -> None:
                 last_tok = inner_tokens[-1]
                 inner_end_pos = last_tok[2] + len(last_tok[1])
 
-                # copy everything up to the '(' contents verbatim (return type,
-                # function name, keyword like "if"/"while", and the '(' itself)
+                # copy everything up to the ( contents (return type,
+                # function name, keyword like if/while, and the ( itself)
                 out_parts.append(src[cursor:inner_start_pos])
                 out_parts.append(rewrite_line(inner_tokens, scope))
                 cursor = inner_end_pos
-                # the closing ')' and anything after (up to '{') gets copied
-                # verbatim on the next iteration's gap-fill
+                # the closing ) and anything after (up to {) gets copied
+                # on the next iteration's gap-fill
         except Exception as lucy:
             print(f"An unexpected error occurred: {lucy}")
             if kind == 'stmt':
